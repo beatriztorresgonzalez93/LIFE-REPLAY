@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Life Replay (React Native + Expo)
 
-## Getting Started
+App móvil donde cada día guardas **1 foto, 1 pensamiento, 1 canción y 1 emoción**. Tus días se agrupan en **temporadas** y la IA puede escribir la conclusión cinematográfica de cada una.
 
-First, run the development server:
+## Ver en el móvil con QR (Expo Go)
+
+1. Instala **Expo Go** en tu móvil ([Android](https://play.google.com/store/apps/details?id=host.exp.exponent) · [iOS](https://apps.apple.com/app/expo-go/id982107779))
+2. En el proyecto:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npx expo start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. Escanea el **código QR** que aparece en la terminal con Expo Go (Android) o la cámara (iOS)
+4. La app se abrirá en tu teléfono
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> Usa la misma red Wi‑Fi en el PC y el móvil. Si no conecta, prueba `npx expo start --tunnel`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Funcionalidades
 
-## Learn More
+- **Inicio** — temporadas y episodios recientes
+- **Nuevo episodio** — formulario diario completo
+- **Foto del día** — **hacer foto con la cámara** o **subir desde galería**
+- **Detalle de episodio** — vista cinematográfica
+- **Temporada** — episodios del año + botón **Generar con IA**
+- **Datos locales** — AsyncStorage con 5 episodios de ejemplo
 
-To learn more about Next.js, take a look at the following resources:
+## Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Expo SDK 54 + Expo Router
+- React Native
+- TypeScript
+- AsyncStorage
+- expo-image-picker (cámara + galería)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Estructura
 
-## Deploy on Vercel
+```
+app/           # Pantallas (Expo Router)
+components/    # UI, cards, PhotoPicker
+hooks/         # useEpisodes
+lib/           # tipos, datos, IA mock, temporadas
+supabase/      # schema.sql (para backend futuro)
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Próximos pasos
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Conectar Supabase (`supabase/schema.sql`)
+2. API real de IA (OpenAI / Gemini)
+3. `eas build` para generar APK/IPA de producción
