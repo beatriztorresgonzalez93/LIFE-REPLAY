@@ -2,14 +2,23 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { Link } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { getEmotion } from "@/lib/emotions";
+import { useResponsive } from "@/lib/responsive";
 import type { Season } from "@/lib/types";
 import { colors, radius, spacing } from "@/lib/theme";
 
 export function SeasonCard({ season }: { season: Season }) {
+  const { isDesktop, seasonCoverMaxHeight } = useResponsive();
+
   return (
     <Link href={`/season/${season.year}`} asChild>
       <Pressable style={styles.card}>
-        <View style={styles.coverWrap}>
+        <View
+          style={[
+            styles.coverWrap,
+            isDesktop && styles.coverWrapDesktop,
+            seasonCoverMaxHeight ? { maxHeight: seasonCoverMaxHeight } : null,
+          ]}
+        >
           <Image source={{ uri: season.coverUrl }} style={styles.cover} />
           <View style={styles.overlay} />
           <View style={styles.coverText}>
@@ -48,10 +57,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
+    flex: 1,
   },
   coverWrap: {
     aspectRatio: 2 / 3,
     position: "relative",
+    overflow: "hidden",
+  },
+  coverWrapDesktop: {
+    aspectRatio: 4 / 5,
   },
   cover: {
     width: "100%",

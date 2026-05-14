@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Image,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -10,9 +9,11 @@ import {
 import { useLocalSearchParams } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { EpisodeCard } from "@/components/EpisodeCard";
+import { ScreenContainer } from "@/components/ScreenContainer";
 import { Button } from "@/components/ui/Button";
 import { generateSeasonSummary } from "@/lib/ai";
 import { loadEpisodes } from "@/lib/data";
+import { useResponsive } from "@/lib/responsive";
 import { getSeasonByYear, groupEpisodesIntoSeasons } from "@/lib/seasons";
 import type { Season } from "@/lib/types";
 import { colors, radius, spacing } from "@/lib/theme";
@@ -20,6 +21,7 @@ import { colors, radius, spacing } from "@/lib/theme";
 export default function SeasonScreen() {
   const { year: yearParam } = useLocalSearchParams<{ year: string }>();
   const year = Number(yearParam);
+  const { heroHeight, isDesktop } = useResponsive();
   const [season, setSeason] = useState<Season | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -63,8 +65,14 @@ export default function SeasonScreen() {
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <View style={styles.hero}>
+    <ScreenContainer scroll contentStyle={styles.content}>
+      <View
+        style={[
+          styles.hero,
+          { height: heroHeight + 40 },
+          isDesktop && styles.heroDesktop,
+        ]}
+      >
         <Image source={{ uri: season.coverUrl }} style={styles.heroImage} />
         <View style={styles.heroOverlay} />
         <View style={styles.heroText}>
@@ -104,17 +112,13 @@ export default function SeasonScreen() {
           <EpisodeCard key={episode.id} episode={episode} compact />
         ))}
       </View>
-    </ScrollView>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   content: {
-    paddingBottom: spacing.xl,
+    gap: spacing.md,
   },
   center: {
     flex: 1,
@@ -126,8 +130,13 @@ const styles = StyleSheet.create({
     color: colors.muted,
   },
   hero: {
-    height: 280,
     position: "relative",
+    overflow: "hidden",
+    borderRadius: radius.lg,
+    width: "100%",
+  },
+  heroDesktop: {
+    maxHeight: 340,
   },
   heroImage: {
     width: "100%",
@@ -155,12 +164,14 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 6,
     lineHeight: 32,
+    maxWidth: 640,
   },
   synopsis: {
     color: "rgba(255,255,255,0.85)",
     fontSize: 14,
     marginTop: 8,
     lineHeight: 20,
+    maxWidth: 560,
   },
   meta: {
     color: "rgba(255,255,255,0.6)",
@@ -168,13 +179,15 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   aiBox: {
-    margin: spacing.md,
     padding: spacing.md,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     gap: spacing.md,
+    maxWidth: 720,
+    width: "100%",
+    alignSelf: "center",
   },
   aiHeader: {
     gap: 6,
@@ -211,11 +224,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "700",
     letterSpacing: 1,
-    marginHorizontal: spacing.md,
-    marginBottom: spacing.sm,
   },
   list: {
-    paddingHorizontal: spacing.md,
     gap: spacing.sm,
+    maxWidth: 720,
+    width: "100%",
+    alignSelf: "center",
   },
 });

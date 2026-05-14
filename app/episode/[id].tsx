@@ -3,21 +3,23 @@ import {
   ActivityIndicator,
   Image,
   Linking,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { ScreenContainer } from "@/components/ScreenContainer";
 import { Button } from "@/components/ui/Button";
 import { formatEpisodeDate, getEpisodeById, loadEpisodes } from "@/lib/data";
 import { getEmotion } from "@/lib/emotions";
+import { useResponsive } from "@/lib/responsive";
 import type { Episode } from "@/lib/types";
 import { colors, radius, spacing } from "@/lib/theme";
 
 export default function EpisodeDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { heroHeight, isDesktop } = useResponsive();
   const [episode, setEpisode] = useState<Episode | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -50,8 +52,14 @@ export default function EpisodeDetailScreen() {
   const emotion = getEmotion(episode.emotion);
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <View style={styles.hero}>
+    <ScreenContainer scroll contentStyle={styles.content}>
+      <View
+        style={[
+          styles.hero,
+          { height: heroHeight },
+          isDesktop && styles.heroDesktop,
+        ]}
+      >
         <Image source={{ uri: episode.photoUrl }} style={styles.heroImage} />
         <View style={styles.heroOverlay} />
         <View style={styles.heroText}>
@@ -86,17 +94,13 @@ export default function EpisodeDetailScreen() {
           onPress={() => router.push(`/season/${episode.seasonYear}`)}
         />
       </View>
-    </ScrollView>
+    </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   content: {
-    paddingBottom: spacing.xl,
+    gap: spacing.md,
   },
   center: {
     flex: 1,
@@ -112,8 +116,13 @@ const styles = StyleSheet.create({
     color: colors.accent,
   },
   hero: {
-    height: 260,
     position: "relative",
+    overflow: "hidden",
+    borderRadius: radius.lg,
+    width: "100%",
+  },
+  heroDesktop: {
+    maxHeight: 320,
   },
   heroImage: {
     width: "100%",
@@ -141,10 +150,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     marginTop: 6,
     lineHeight: 30,
+    maxWidth: 640,
   },
   body: {
-    padding: spacing.md,
     gap: spacing.md,
+    maxWidth: 720,
+    width: "100%",
+    alignSelf: "center",
   },
   badges: {
     gap: spacing.sm,
@@ -163,6 +175,7 @@ const styles = StyleSheet.create({
     color: colors.foreground,
     fontSize: 18,
     lineHeight: 28,
+    maxWidth: 640,
   },
   songLink: {
     color: colors.accent,

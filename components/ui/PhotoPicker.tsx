@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { useResponsive } from "@/lib/responsive";
 import { colors, radius, spacing } from "@/lib/theme";
 
 interface PhotoPickerProps {
@@ -17,6 +18,7 @@ interface PhotoPickerProps {
 }
 
 export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
+  const { photoPreviewMaxHeight } = useResponsive();
   const [loading, setLoading] = useState(false);
 
   async function ensureCameraPermission() {
@@ -85,7 +87,12 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
         {value ? (
           <Image source={{ uri: value }} style={styles.image} resizeMode="cover" />
         ) : (
-          <View style={styles.placeholder}>
+          <View
+            style={[
+              styles.placeholder,
+              photoPreviewMaxHeight ? { maxHeight: photoPreviewMaxHeight } : null,
+            ]}
+          >
             <FontAwesome name="image" size={32} color={colors.muted} />
             <Text style={styles.placeholderText}>Añade la foto del episodio</Text>
           </View>
@@ -120,12 +127,14 @@ const styles = StyleSheet.create({
   },
   preview: {
     aspectRatio: 16 / 9,
+    maxHeight: 280,
     borderRadius: radius.lg,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: colors.border,
     borderStyle: "dashed",
     backgroundColor: colors.surface,
+    width: "100%",
   },
   image: {
     width: "100%",
@@ -133,6 +142,7 @@ const styles = StyleSheet.create({
   },
   placeholder: {
     flex: 1,
+    minHeight: 160,
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.sm,

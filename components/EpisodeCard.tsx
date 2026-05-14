@@ -3,6 +3,7 @@ import { Link } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { formatEpisodeDate } from "@/lib/data";
 import { getEmotion } from "@/lib/emotions";
+import { useResponsive } from "@/lib/responsive";
 import type { Episode } from "@/lib/types";
 import { colors, radius, spacing } from "@/lib/theme";
 
@@ -13,12 +14,16 @@ export function EpisodeCard({
   episode: Episode;
   compact?: boolean;
 }) {
+  const { thumb } = useResponsive();
   const emotion = getEmotion(episode.emotion);
 
   return (
     <Link href={`/episode/${episode.id}`} asChild>
       <Pressable style={styles.card}>
-        <Image source={{ uri: episode.photoUrl }} style={styles.thumb} />
+        <Image
+          source={{ uri: episode.photoUrl }}
+          style={[styles.thumb, { width: thumb.width, height: thumb.height }]}
+        />
         <View style={styles.body}>
           <Text style={styles.date}>{formatEpisodeDate(episode.date)}</Text>
           <Text style={styles.title} numberOfLines={1}>
@@ -57,13 +62,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   thumb: {
-    width: 72,
-    height: 88,
     borderRadius: radius.sm,
   },
   body: {
     flex: 1,
     gap: 4,
+    minWidth: 0,
   },
   date: {
     color: colors.muted,

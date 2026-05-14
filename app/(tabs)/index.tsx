@@ -1,21 +1,18 @@
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { EpisodeCard } from "@/components/EpisodeCard";
+import { ScreenContainer } from "@/components/ScreenContainer";
 import { SeasonCard } from "@/components/SeasonCard";
 import { Button } from "@/components/ui/Button";
 import { useEpisodes } from "@/hooks/useEpisodes";
+import { useResponsive } from "@/lib/responsive";
 import { colors, radius, spacing } from "@/lib/theme";
 
 export default function HomeScreen() {
   const { episodes, seasons, ready } = useEpisodes();
+  const { isDesktop, isWide } = useResponsive();
 
   if (!ready) {
     return (
@@ -32,24 +29,28 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["bottom"]}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.hero}>
+      <ScreenContainer scroll contentStyle={styles.content}>
+        <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
           <Text style={styles.kicker}>LIFE REPLAY</Text>
-          <Text style={styles.title}>Tu vida, episodio a episodio</Text>
+          <Text style={[styles.title, isDesktop && styles.titleDesktop]}>
+            Tu vida, episodio a episodio
+          </Text>
           <Text style={styles.subtitle}>
             Cada día: una foto, un pensamiento, una canción y una emoción. Tu
             historia como una serie.
           </Text>
-          <View style={styles.heroActions}>
+          <View style={[styles.heroActions, isDesktop && styles.heroActionsDesktop]}>
             <Button
               title="Grabar episodio de hoy"
               onPress={() => router.push("/episode/new")}
+              style={isDesktop ? styles.heroButton : undefined}
             />
             {seasons[0] && (
               <Button
                 title={`Ver temporada ${seasons[0].year}`}
                 variant="secondary"
                 onPress={() => router.push(`/season/${seasons[0].year}`)}
+                style={isDesktop ? styles.heroButton : undefined}
               />
             )}
           </View>
@@ -61,19 +62,26 @@ export default function HomeScreen() {
         </View>
         <View style={styles.seasonGrid}>
           {seasons.map((season) => (
-            <View key={season.year} style={styles.seasonItem}>
+            <View
+              key={season.year}
+              style={[
+                styles.seasonItem,
+                isWide && styles.seasonItemWide,
+                isDesktop && !isWide && styles.seasonItemDesktop,
+              ]}
+            >
               <SeasonCard season={season} />
             </View>
           ))}
         </View>
 
-        <Text style={[styles.sectionTitle, styles.recentTitle]}>EPISODIOS RECIENTES</Text>
+        <Text style={styles.sectionTitle}>EPISODIOS RECIENTES</Text>
         <View style={styles.episodeList}>
           {recent.slice(0, 5).map((episode) => (
             <EpisodeCard key={episode.id} episode={episode} />
           ))}
         </View>
-      </ScrollView>
+      </ScreenContainer>
     </SafeAreaView>
   );
 }
@@ -84,9 +92,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    padding: spacing.md,
     gap: spacing.lg,
-    paddingBottom: spacing.xl,
   },
   loading: {
     flex: 1,
@@ -106,6 +112,9 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.sm,
   },
+  heroDesktop: {
+    padding: spacing.xl,
+  },
   kicker: {
     color: colors.accent,
     fontSize: 11,
@@ -119,15 +128,29 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     lineHeight: 34,
   },
+  titleDesktop: {
+    fontSize: 36,
+    lineHeight: 42,
+    maxWidth: 560,
+  },
   subtitle: {
     color: colors.muted,
     fontSize: 15,
     lineHeight: 22,
     marginTop: 4,
+    maxWidth: 520,
   },
   heroActions: {
     marginTop: spacing.md,
     gap: spacing.sm,
+  },
+  heroActionsDesktop: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  heroButton: {
+    flexGrow: 0,
+    minWidth: 220,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -148,9 +171,15 @@ const styles = StyleSheet.create({
   seasonItem: {
     width: "47%",
     flexGrow: 1,
+    maxWidth: "100%",
   },
-  recentTitle: {
-    marginTop: spacing.sm,
+  seasonItemDesktop: {
+    width: "48%",
+    maxWidth: 360,
+  },
+  seasonItemWide: {
+    width: "31%",
+    maxWidth: 320,
   },
   episodeList: {
     gap: spacing.sm,

@@ -3,13 +3,13 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ScreenContainer } from "@/components/ScreenContainer";
 import { Button } from "@/components/ui/Button";
 import { EmotionPicker } from "@/components/ui/EmotionPicker";
 import { Field } from "@/components/ui/Field";
@@ -64,7 +64,11 @@ export default function NewEpisodeScreen() {
         style={styles.flex}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScreenContainer
+          scroll
+          contentStyle={styles.content}
+          scrollProps={{ keyboardShouldPersistTaps: "handled" }}
+        >
           <Text style={styles.kicker}>NUEVO CAPÍTULO</Text>
           <Text style={styles.title}>Episodio de hoy</Text>
           <Text style={styles.subtitle}>
@@ -85,19 +89,24 @@ export default function NewEpisodeScreen() {
             style={styles.textarea}
           />
 
-          <Field
-            label="Canción"
-            placeholder="Título"
-            value={songTitle}
-            onChangeText={setSongTitle}
-          />
-
-          <Field
-            label="Artista"
-            placeholder="Artista"
-            value={songArtist}
-            onChangeText={setSongArtist}
-          />
+          <View style={styles.row}>
+            <View style={styles.rowItem}>
+              <Field
+                label="Canción"
+                placeholder="Título"
+                value={songTitle}
+                onChangeText={setSongTitle}
+              />
+            </View>
+            <View style={styles.rowItem}>
+              <Field
+                label="Artista"
+                placeholder="Artista"
+                value={songArtist}
+                onChangeText={setSongArtist}
+              />
+            </View>
+          </View>
 
           <Field
             label="Enlace (opcional)"
@@ -113,7 +122,7 @@ export default function NewEpisodeScreen() {
           </View>
 
           <Button title="Guardar episodio de hoy" onPress={handleSave} loading={saving} />
-        </ScrollView>
+        </ScreenContainer>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -128,9 +137,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.md,
     gap: spacing.md,
-    paddingBottom: spacing.xl,
+    maxWidth: 720,
   },
   kicker: {
     color: colors.accent,
@@ -160,5 +168,14 @@ const styles = StyleSheet.create({
     minHeight: 120,
     textAlignVertical: "top",
     paddingTop: spacing.md,
+  },
+  row: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.md,
+  },
+  rowItem: {
+    flex: 1,
+    minWidth: 200,
   },
 });
