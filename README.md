@@ -2,6 +2,25 @@
 
 App móvil donde cada día guardas **1 foto, 1 pensamiento, 1 canción y 1 emoción**. Tus días se agrupan en **temporadas** y la IA puede escribir la conclusión cinematográfica de cada una.
 
+## Desplegar en Vercel (versión web)
+
+> Vercel publica la **versión web** de la app. El móvil con QR sigue siendo con **Expo Go** (`npx expo start`).
+
+1. Entra en [vercel.com](https://vercel.com) y abre tu proyecto (o **Add New → Project**).
+2. En **Git Repository**, conecta GitHub si aún no lo tienes.
+3. Importa el repo **beatriztorresgonzalez93/LIFE-REPLAY**.
+4. Vercel detectará `vercel.json` automáticamente:
+   - **Build command:** `npm run build:web`
+   - **Output directory:** `dist`
+5. Pulsa **Deploy**.
+
+Si el proyecto en Vercel **ya existe** pero no está unido al repo:
+
+1. Proyecto → **Settings** → **Git**
+2. **Connect Git Repository** → elige `LIFE-REPLAY`
+3. Rama: `main` → **Save**
+4. **Deployments** → **Redeploy** (o haz un `git push` nuevo)
+
 ## Ver en el móvil con QR (Expo Go)
 
 1. Instala **Expo Go** en tu móvil ([Android](https://play.google.com/store/apps/details?id=host.exp.exponent) · [iOS](https://apps.apple.com/app/expo-go/id982107779))
