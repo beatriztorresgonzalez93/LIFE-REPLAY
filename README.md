@@ -45,12 +45,41 @@ npx expo start
 - **Temporada** — episodios del año + botón **Generar con IA**
 - **Datos locales** — AsyncStorage con 5 episodios de ejemplo
 
+## Supabase (base de datos + fotos)
+
+### 1. Tablas (si no lo hiciste)
+
+SQL Editor → pega y ejecuta `supabase/schema.sql`.
+
+### 2. Bucket de fotos
+
+SQL Editor → pega y ejecuta **`supabase/storage.sql`**.
+
+Crea el bucket `episode-photos` (público para ver las imágenes) y las políticas de subida.
+
+**Sin login en la app aún:** descomenta al final de `storage.sql` la política `Dev anon upload` para poder subir fotos mientras desarrollas. Cuando añadas auth, coméntala o bórrala.
+
+**Alternativa por interfaz:** Storage → New bucket → nombre `episode-photos` → Public bucket ✅ → Create. Las políticas RLS es mejor crearlas con el SQL de `storage.sql`.
+
+### 3. Variables de entorno
+
+Copia `.env.example` a `.env` y rellena (Project Settings → API en Supabase):
+
+```env
+EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+```
+
+En **Vercel**, añade las mismas variables en Environment Variables.
+
+Reinicia Expo después de cambiar `.env`: `npx expo start -c`.
+
 ## Stack
 
 - Expo SDK 54 + Expo Router
 - React Native
 - TypeScript
-- AsyncStorage
+- AsyncStorage (+ Supabase Storage para fotos)
 - expo-image-picker (cámara + galería)
 
 ## Estructura
@@ -60,11 +89,11 @@ app/           # Pantallas (Expo Router)
 components/    # UI, cards, PhotoPicker
 hooks/         # useEpisodes
 lib/           # tipos, datos, IA mock, temporadas
-supabase/      # schema.sql (para backend futuro)
+supabase/      # schema.sql, storage.sql
 ```
 
 ## Próximos pasos
 
-1. Conectar Supabase (`supabase/schema.sql`)
-2. API real de IA (OpenAI / Gemini)
-3. `eas build` para generar APK/IPA de producción
+1. Login con Supabase Auth (para subidas seguras sin política dev)
+2. Guardar episodios en PostgreSQL (no solo AsyncStorage)
+3. API real de IA (OpenAI / Gemini)

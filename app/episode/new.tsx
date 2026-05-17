@@ -16,6 +16,7 @@ import { Field } from "@/components/ui/Field";
 import { PhotoPicker } from "@/components/ui/PhotoPicker";
 import { useEpisodes } from "@/hooks/useEpisodes";
 import { createEpisode } from "@/lib/data";
+import { uploadEpisodePhoto } from "@/lib/uploadPhoto";
 import type { Emotion } from "@/lib/types";
 import { colors, spacing } from "@/lib/theme";
 
@@ -40,6 +41,10 @@ export default function NewEpisodeScreen() {
 
     setSaving(true);
     try {
+      const photoUrl = photoUri
+        ? await uploadEpisodePhoto(photoUri)
+        : DEFAULT_PHOTO;
+
       const episode = createEpisode(
         {
           thought: thought.trim(),
@@ -47,7 +52,7 @@ export default function NewEpisodeScreen() {
           songArtist: songArtist.trim(),
           songUrl: songUrl.trim() || undefined,
           emotion,
-          photoUrl: photoUri ?? DEFAULT_PHOTO,
+          photoUrl,
         },
         episodes
       );
