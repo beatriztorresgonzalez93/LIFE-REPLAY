@@ -1,38 +1,31 @@
-import { Platform } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /**
- * Almacenamiento clave-valor: AsyncStorage en móvil, localStorage en web.
+ * Almacenamiento persistente (AsyncStorage v2 — compatible con Expo Go).
+ * En web usa localStorage internamente.
  */
 export async function getItem(key: string): Promise<string | null> {
-  if (Platform.OS === "web") {
-    if (typeof localStorage === "undefined") return null;
-    return localStorage.getItem(key);
+  try {
+    return await AsyncStorage.getItem(key);
+  } catch (error) {
+    console.warn("[storage] getItem failed", error);
+    return null;
   }
-  const AsyncStorage = (await import("@react-native-async-storage/async-storage"))
-    .default;
-  return AsyncStorage.getItem(key);
 }
 
 export async function setItem(key: string, value: string): Promise<void> {
-  if (Platform.OS === "web") {
-    if (typeof localStorage !== "undefined") {
-      localStorage.setItem(key, value);
-    }
-    return;
+  try {
+    await AsyncStorage.setItem(key, value);
+  } catch (error) {
+    console.warn("[storage] setItem failed", error);
+    throw error;
   }
-  const AsyncStorage = (await import("@react-native-async-storage/async-storage"))
-    .default;
-  await AsyncStorage.setItem(key, value);
 }
 
 export async function removeItem(key: string): Promise<void> {
-  if (Platform.OS === "web") {
-    if (typeof localStorage !== "undefined") {
-      localStorage.removeItem(key);
-    }
-    return;
+  try {
+    await AsyncStorage.removeItem(key);
+  } catch (error) {
+    console.warn("[storage] removeItem failed", error);
   }
-  const AsyncStorage = (await import("@react-native-async-storage/async-storage"))
-    .default;
-  await AsyncStorage.removeItem(key);
 }
