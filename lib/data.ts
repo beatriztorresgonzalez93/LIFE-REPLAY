@@ -1,5 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import type { Episode, NewEpisodeInput } from "./types";
+import { getItem, setItem } from "./storage";
 
 const STORAGE_KEY = "life-replay-episodes";
 
@@ -79,9 +79,9 @@ export const SEED_EPISODES: Episode[] = [
 
 export async function loadEpisodes(): Promise<Episode[]> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
+    const raw = await getItem(STORAGE_KEY);
     if (!raw) {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(SEED_EPISODES));
+      await setItem(STORAGE_KEY, JSON.stringify(SEED_EPISODES));
       return SEED_EPISODES;
     }
     return JSON.parse(raw) as Episode[];
@@ -91,7 +91,7 @@ export async function loadEpisodes(): Promise<Episode[]> {
 }
 
 export async function saveEpisodes(episodes: Episode[]) {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(episodes));
+  await setItem(STORAGE_KEY, JSON.stringify(episodes));
 }
 
 export function createEpisode(input: NewEpisodeInput, existing: Episode[]): Episode {
