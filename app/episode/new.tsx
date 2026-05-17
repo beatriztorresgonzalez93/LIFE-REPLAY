@@ -15,7 +15,7 @@ import { EmotionPicker } from "@/components/ui/EmotionPicker";
 import { Field } from "@/components/ui/Field";
 import { PhotoPicker } from "@/components/ui/PhotoPicker";
 import { useEpisodes } from "@/hooks/useEpisodes";
-import { createEpisode } from "@/lib/data";
+import { saveNewEpisode } from "@/lib/data";
 import { uploadEpisodePhoto } from "@/lib/uploadPhoto";
 import type { Emotion } from "@/lib/types";
 import { colors, spacing } from "@/lib/theme";
@@ -24,7 +24,7 @@ const DEFAULT_PHOTO =
   "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80";
 
 export default function NewEpisodeScreen() {
-  const { episodes, persist } = useEpisodes();
+  const { episodes, setEpisodes } = useEpisodes();
   const [thought, setThought] = useState("");
   const [songTitle, setSongTitle] = useState("");
   const [songArtist, setSongArtist] = useState("");
@@ -45,7 +45,7 @@ export default function NewEpisodeScreen() {
         ? await uploadEpisodePhoto(photoUri)
         : DEFAULT_PHOTO;
 
-      const episode = createEpisode(
+      const episode = await saveNewEpisode(
         {
           thought: thought.trim(),
           songTitle: songTitle.trim(),
@@ -56,7 +56,7 @@ export default function NewEpisodeScreen() {
         },
         episodes
       );
-      await persist([episode, ...episodes]);
+      setEpisodes([episode, ...episodes]);
       router.replace(`/episode/${episode.id}`);
     } catch (error) {
       console.error("[handleSave]", error);

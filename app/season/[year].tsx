@@ -12,7 +12,7 @@ import { EpisodeCard } from "@/components/EpisodeCard";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { Button } from "@/components/ui/Button";
 import { generateSeasonSummary } from "@/lib/ai";
-import { loadEpisodes } from "@/lib/data";
+import { loadEpisodes, saveSeasonAI } from "@/lib/data";
 import { useResponsive } from "@/lib/responsive";
 import { getSeasonByYear, groupEpisodesIntoSeasons } from "@/lib/seasons";
 import type { Season } from "@/lib/types";
@@ -39,12 +39,14 @@ export default function SeasonScreen() {
     setGenerating(true);
     await new Promise((r) => setTimeout(r, 1200));
     const result = generateSeasonSummary(season);
-    setSeason({
+    const updated = {
       ...season,
       title: result.title,
       synopsis: result.synopsis,
       conclusion: result.conclusion,
-    });
+    };
+    setSeason(updated);
+    await saveSeasonAI(year, result);
     setGenerating(false);
   }
 

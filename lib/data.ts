@@ -1,4 +1,11 @@
 import type { Episode, NewEpisodeInput } from "./types";
+import { ensureSupabaseSession } from "./auth";
+import {
+  fetchEpisodesFromDatabase,
+  saveNewEpisodeToDatabase,
+  updateSeasonInDatabase,
+} from "./supabaseEpisodes";
+import { isSupabaseConfigured } from "./supabase";
 import { getItem, setItem } from "./storage";
 
 const STORAGE_KEY = "life-replay-episodes";
@@ -78,6 +85,23 @@ export const SEED_EPISODES: Episode[] = [
 ];
 
 export async function loadEpisodes(): Promise<Episode[]> {
+  if (isSupabaseConfigured()) {
+    try {
+      await ensureSupabaseSession();
+      const remote = await fetchEpisodesFromDatabase();
+      if (remote.length > 0) {
+        await setItem(STORAGE_KEY, JSON.stringify(remote));
+        return remote;
+      }
+    } catch (error) {
+      console.warn("[loadEpisodes] Supabase:", error);
+    }
+  }
+
+  return loadEpisodesLocal();
+}
+
+async function loadEpisodesLocal(): Promise<Episode[]> {
   try {
     const raw = await getItem(STORAGE_KEY);
     if (!raw) {
@@ -92,6 +116,40 @@ export async function loadEpisodes(): Promise<Episode[]> {
 
 export async function saveEpisodes(episodes: Episode[]) {
   await setItem(STORAGE_KEY, JSON.stringify(episodes));
+}
+
+/** Guarda un episodio nuevo en Supabase (si está configurado) y en caché local. */
+export async function saveNewEpisode(
+  input: NewEpisodeInput,
+  existing: Episode[]
+): Promise<Episode> {
+  let episode = createEpisode(input, existing);
+
+  if (isSupabaseConfigured()) {
+    try {
+      episode = await saveNewEpisodeToDatabase(input, existing, createEpisode);
+    } catch (error) {
+      console.warn("[saveNewEpisode] Supabase:", error);
+      throw error;
+    }
+  }
+
+  const next = [episode, ...existing.filter((e) => e.id !== episode.id)];
+  await saveEpisodes(next);
+  return episode;
+}
+
+export async function saveSeasonAI(
+  year: number,
+  updates: { title: string; synopsis: string; conclusion: string }
+) {
+  if (isSupabaseConfigured()) {
+    try {
+      await updateSeasonInDatabase(year, updates);
+    } catch (error) {
+      console.warn("[saveSeasonAI] Supabase:", error);
+    }
+  }
 }
 
 export function createEpisode(input: NewEpisodeInput, existing: Episode[]): Episode {

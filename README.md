@@ -53,15 +53,16 @@ SQL Editor → pega y ejecuta `supabase/schema.sql`.
 
 ### 2. Bucket de fotos
 
-SQL Editor → pega y ejecuta **`supabase/storage.sql`**.
+SQL Editor → ejecuta **`supabase/storage.sql`**.
 
-Crea el bucket `episode-photos` (público para ver las imágenes) y las políticas de subida.
+### 3. Auth (obligatorio para la base de datos)
 
-**Sin login en la app aún:** descomenta al final de `storage.sql` la política `Dev anon upload` para poder subir fotos mientras desarrollas. Cuando añadas auth, coméntala o bórrala.
+1. En Supabase → **Authentication** → **Providers** → **Anonymous** → activar **Enable**
+2. SQL Editor → ejecuta **`supabase/auth.sql`**
 
-**Alternativa por interfaz:** Storage → New bucket → nombre `episode-photos` → Public bucket ✅ → Create. Las políticas RLS es mejor crearlas con el SQL de `storage.sql`.
+Sin el paso 3 la app no puede escribir en las tablas `episodes` / `seasons`.
 
-### 3. Variables de entorno
+### 4. Variables de entorno
 
 Copia `.env.example` a `.env` y rellena (Project Settings → API en Supabase):
 
@@ -79,7 +80,7 @@ Reinicia Expo después de cambiar `.env`: `npx expo start -c`.
 - Expo SDK 54 + Expo Router
 - React Native
 - TypeScript
-- AsyncStorage (+ Supabase Storage para fotos)
+- AsyncStorage + **Supabase** (PostgreSQL + Storage + auth anónima)
 - expo-image-picker (cámara + galería)
 
 ## Estructura
@@ -94,6 +95,5 @@ supabase/      # schema.sql, storage.sql
 
 ## Próximos pasos
 
-1. Login con Supabase Auth (para subidas seguras sin política dev)
-2. Guardar episodios en PostgreSQL (no solo AsyncStorage)
-3. API real de IA (OpenAI / Gemini)
+1. Login con email/Google (opcional, además del anónimo)
+2. API real de IA (OpenAI / Gemini)
