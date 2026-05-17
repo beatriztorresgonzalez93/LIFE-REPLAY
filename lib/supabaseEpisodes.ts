@@ -181,3 +181,18 @@ export async function saveNewEpisodeToDatabase(
   const draft = buildDraft(input, existing);
   return insertEpisodeToDatabase(draft);
 }
+
+export async function deleteEpisodeFromDatabase(episodeId: string) {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  await ensureSupabaseSession();
+
+  const { error } = await supabase.from("episodes").delete().eq("id", episodeId);
+
+  if (error) throw new Error(error.message);
+}
+
+export function isDatabaseEpisodeId(id: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}

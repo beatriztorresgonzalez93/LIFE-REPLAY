@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Image,
   Linking,
   StyleSheet,
@@ -11,7 +12,7 @@ import { Link, router, useLocalSearchParams } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { Button } from "@/components/ui/Button";
-import { formatEpisodeDate, getEpisodeById, loadEpisodes } from "@/lib/data";
+import { deleteEpisode, formatEpisodeDate, getEpisodeById, loadEpisodes } from "@/lib/data";
 import { getEmotion } from "@/lib/emotions";
 import { useResponsive } from "@/lib/responsive";
 import type { Episode } from "@/lib/types";
@@ -22,6 +23,7 @@ export default function EpisodeDetailScreen() {
   const { heroHeight, isDesktop } = useResponsive();
   const [episode, setEpisode] = useState<Episode | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadEpisodes().then((eps) => {
@@ -29,6 +31,42 @@ export default function EpisodeDetailScreen() {
       setLoading(false);
     });
   }, [id]);
+
+  function confirmDelete() {
+    if (!episode) return;
+
+    Alert.alert(
+      "Eliminar episodio",
+      "¿Seguro que quieres borrar este capítulo? No se puede deshacer.",
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Eliminar",
+          style: "destructive",
+          onPress: handleDelete,
+        },
+      ]
+    );
+  }
+
+  async function handleDelete() {
+    if (!episode) return;
+
+    setDeleting(true);
+    try {
+      const all = await loadEpisodes();
+      await deleteEpisode(episode.id, all);
+      router.replace("/");
+    } catch (error) {
+      console.error("[handleDelete]", error);
+      Alert.alert(
+        "No se pudo eliminar",
+        error instanceof Error ? error.message : "Inténtalo de nuevo."
+      );
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -92,6 +130,14 @@ export default function EpisodeDetailScreen() {
           title={`Ver temporada ${episode.seasonYear}`}
           variant="secondary"
           onPress={() => router.push(`/season/${episode.seasonYear}`)}
+        />
+
+        <Button
+          title="Eliminar episodio"
+          variant="danger"
+          onPress={confirmDelete}
+          loading={deleting}
+          disabled={deleting}
         />
       </View>
     </ScreenContainer>

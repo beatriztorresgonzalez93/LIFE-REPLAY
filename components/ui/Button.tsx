@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { colors, radius, spacing } from "@/lib/theme";
 
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "ghost" | "danger";
 
 interface ButtonProps {
   title: string;
@@ -37,6 +37,7 @@ export function Button({
         variant === "primary" && styles.primary,
         variant === "secondary" && styles.secondary,
         variant === "ghost" && styles.ghost,
+        variant === "danger" && styles.danger,
         (disabled || loading) && styles.disabled,
         pressed && styles.pressed,
         style,
@@ -55,6 +56,7 @@ const textVariant: Record<Variant, TextStyle> = {
   primary: { color: "#fff", fontWeight: "600" },
   secondary: { color: colors.foreground, fontWeight: "600" },
   ghost: { color: colors.muted, fontWeight: "500" },
+  danger: { color: "#fff", fontWeight: "600" },
 };
 
 const styles = StyleSheet.create({
@@ -75,6 +77,11 @@ const styles = StyleSheet.create({
   },
   ghost: {
     backgroundColor: "transparent",
+  },
+  danger: {
+    backgroundColor: "#991b1b",
+    borderWidth: 1,
+    borderColor: "#b91c1c",
   },
   disabled: {
     opacity: 0.5,

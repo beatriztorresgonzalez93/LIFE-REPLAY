@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { loadEpisodes, saveEpisodes } from "@/lib/data";
+import { loadEpisodes, saveEpisodes, deleteEpisode } from "@/lib/data";
 import { groupEpisodesIntoSeasons } from "@/lib/seasons";
 import type { Episode } from "@/lib/types";
 
@@ -23,7 +23,16 @@ export function useEpisodes() {
     await saveEpisodes(next);
   }, []);
 
+  const removeEpisode = useCallback(
+    async (episodeId: string) => {
+      const next = await deleteEpisode(episodeId, episodes);
+      setEpisodes(next);
+      return next;
+    },
+    [episodes]
+  );
+
   const seasons = groupEpisodesIntoSeasons(episodes);
 
-  return { episodes, seasons, ready, refresh, persist, setEpisodes };
+  return { episodes, seasons, ready, refresh, persist, setEpisodes, removeEpisode };
 }

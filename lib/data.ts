@@ -4,6 +4,8 @@ import {
   fetchEpisodesFromDatabase,
   saveNewEpisodeToDatabase,
   updateSeasonInDatabase,
+  deleteEpisodeFromDatabase,
+  isDatabaseEpisodeId,
 } from "./supabaseEpisodes";
 import { isSupabaseConfigured } from "./supabase";
 import { getItem, setItem } from "./storage";
@@ -150,6 +152,20 @@ export async function saveSeasonAI(
       console.warn("[saveSeasonAI] Supabase:", error);
     }
   }
+}
+
+/** Elimina un episodio de Supabase (si aplica) y de la caché local. */
+export async function deleteEpisode(
+  episodeId: string,
+  existing: Episode[]
+): Promise<Episode[]> {
+  if (isSupabaseConfigured() && isDatabaseEpisodeId(episodeId)) {
+    await deleteEpisodeFromDatabase(episodeId);
+  }
+
+  const next = existing.filter((e) => e.id !== episodeId);
+  await saveEpisodes(next);
+  return next;
 }
 
 export function createEpisode(input: NewEpisodeInput, existing: Episode[]): Episode {
