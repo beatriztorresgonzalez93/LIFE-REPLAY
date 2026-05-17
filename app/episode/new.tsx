@@ -58,6 +58,14 @@ export default function NewEpisodeScreen() {
       );
       await persist([episode, ...episodes]);
       router.replace(`/episode/${episode.id}`);
+    } catch (error) {
+      console.error("[handleSave]", error);
+      Alert.alert(
+        "No se pudo guardar",
+        error instanceof Error
+          ? error.message
+          : "Revisa tu conexión e inténtalo de nuevo."
+      );
     } finally {
       setSaving(false);
     }

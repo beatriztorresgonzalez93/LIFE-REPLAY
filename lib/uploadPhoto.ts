@@ -1,4 +1,9 @@
+import { decode } from "base64-arraybuffer";
+import * as FileSystem from "expo-file-system/legacy";
+import { Platform } from "react-native";
 import { EPISODE_PHOTOS_BUCKET, getSupabase } from "./supabase";
+
+const UPLOAD_TIMEOUT_MS = 20_000;
 
 function isLocalUri(uri: string) {
   return (
@@ -27,9 +32,29 @@ function mimeForExt(ext: string) {
   return map[ext] ?? "image/jpeg";
 }
 
+async function readUriAsArrayBuffer(uri: string): Promise<ArrayBuffer> {
+  if (Platform.OS === "web") {
+    const response = await fetch(uri);
+    return response.arrayBuffer();
+  }
+
+  const base64 = await FileSystem.readAsStringAsync(uri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  return decode(base64);
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error("Tiempo de espera agotado")), ms)
+    ),
+  ]);
+}
+
 /**
- * Sube una foto local a Supabase Storage.
- * Ruta: {userId}/ep-{timestamp}.ext (con sesión) o uploads/ep-{timestamp}.ext (sin sesión, requiere política dev).
+ * Sube foto a Supabase Storage. Si falla, devuelve la URI local para no bloquear guardar.
  */
 export async function uploadEpisodePhoto(localUri: string): Promise<string> {
   if (!isLocalUri(localUri)) {
@@ -41,6 +66,21 @@ export async function uploadEpisodePhoto(localUri: string): Promise<string> {
     return localUri;
   }
 
+  try {
+    return await withTimeout(uploadToSupabase(localUri, supabase), UPLOAD_TIMEOUT_MS);
+  } catch (error) {
+    console.warn(
+      "[uploadEpisodePhoto]",
+      error instanceof Error ? error.message : error
+    );
+    return localUri;
+  }
+}
+
+async function uploadToSupabase(
+  localUri: string,
+  supabase: NonNullable<ReturnType<typeof getSupabase>>
+) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -50,22 +90,18 @@ export async function uploadEpisodePhoto(localUri: string): Promise<string> {
   const folder = user?.id ?? "uploads";
   const path = `${folder}/${fileName}`;
 
-  const response = await fetch(localUri);
-  const blob = await response.blob();
-  const contentType = blob.type && blob.type !== "application/octet-stream"
-    ? blob.type
-    : mimeForExt(ext);
+  const arrayBuffer = await readUriAsArrayBuffer(localUri);
+  const contentType = mimeForExt(ext);
 
   const { error } = await supabase.storage
     .from(EPISODE_PHOTOS_BUCKET)
-    .upload(path, blob, {
+    .upload(path, arrayBuffer, {
       contentType,
       upsert: false,
     });
 
   if (error) {
-    console.warn("[uploadEpisodePhoto]", error.message);
-    return localUri;
+    throw new Error(error.message);
   }
 
   const { data } = supabase.storage.from(EPISODE_PHOTOS_BUCKET).getPublicUrl(path);

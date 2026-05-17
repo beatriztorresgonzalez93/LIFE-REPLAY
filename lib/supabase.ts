@@ -1,9 +1,21 @@
+import Constants from "expo-constants";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
+const extra = Constants.expoConfig?.extra as
+  | { supabaseUrl?: string; supabaseAnonKey?: string }
+  | undefined;
+
 const url =
-  process.env.EXPO_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "";
+  process.env.EXPO_PUBLIC_SUPABASE_URL ??
+  extra?.supabaseUrl ??
+  process.env.SUPABASE_URL ??
+  "";
+
 const anonKey =
-  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY ?? "";
+  process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
+  extra?.supabaseAnonKey ??
+  process.env.SUPABASE_ANON_KEY ??
+  "";
 
 let client: SupabaseClient | null = null;
 
