@@ -17,6 +17,7 @@ import { PhotoPicker } from "@/components/ui/PhotoPicker";
 import { useEpisodes } from "@/hooks/useEpisodes";
 import { saveNewEpisode } from "@/lib/data";
 import { uploadEpisodePhoto } from "@/lib/uploadPhoto";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Emotion } from "@/lib/types";
 import { colors, spacing } from "@/lib/theme";
 
@@ -45,7 +46,7 @@ export default function NewEpisodeScreen() {
         ? await uploadEpisodePhoto(photoUri)
         : DEFAULT_PHOTO;
 
-      const episode = await saveNewEpisode(
+      const { episode, savedToCloud } = await saveNewEpisode(
         {
           thought: thought.trim(),
           songTitle: songTitle.trim(),
@@ -56,6 +57,19 @@ export default function NewEpisodeScreen() {
         },
         episodes
       );
+
+      if (!savedToCloud && isSupabaseConfigured()) {
+        Alert.alert(
+          "Guardado parcial",
+          "El episodio se guardó en este navegador pero no en la base de datos."
+        );
+      } else if (!isSupabaseConfigured()) {
+        Alert.alert(
+          "Solo en este navegador",
+          "Para guardar en Supabase, configura EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABASE_ANON_KEY en Vercel y haz Redeploy."
+        );
+      }
+
       setEpisodes([episode, ...episodes]);
       router.replace(`/episode/${episode.id}`);
     } catch (error) {

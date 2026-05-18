@@ -91,28 +91,29 @@ export async function loadEpisodes(): Promise<Episode[]> {
     try {
       await ensureSupabaseSession();
       const remote = await fetchEpisodesFromDatabase();
-      if (remote.length > 0) {
-        await setItem(STORAGE_KEY, JSON.stringify(remote));
-        return remote;
-      }
+      await setItem(STORAGE_KEY, JSON.stringify(remote));
+      return remote;
     } catch (error) {
       console.warn("[loadEpisodes] Supabase:", error);
     }
   }
 
-  return loadEpisodesLocal();
+  return loadEpisodesLocal(!isSupabaseConfigured());
 }
 
-async function loadEpisodesLocal(): Promise<Episode[]> {
+async function loadEpisodesLocal(useSeedIfEmpty = true): Promise<Episode[]> {
   try {
     const raw = await getItem(STORAGE_KEY);
     if (!raw) {
-      await setItem(STORAGE_KEY, JSON.stringify(SEED_EPISODES));
-      return SEED_EPISODES;
+      const initial = useSeedIfEmpty ? SEED_EPISODES : [];
+      if (useSeedIfEmpty) {
+        await setItem(STORAGE_KEY, JSON.stringify(initial));
+      }
+      return initial;
     }
     return JSON.parse(raw) as Episode[];
   } catch {
-    return SEED_EPISODES;
+    return useSeedIfEmpty ? SEED_EPISODES : [];
   }
 }
 
@@ -124,25 +125,18 @@ export async function saveEpisodes(episodes: Episode[]) {
 export async function saveNewEpisode(
   input: NewEpisodeInput,
   existing: Episode[]
-): Promise<Episode> {
+): Promise<{ episode: Episode; savedToCloud: boolean }> {
   let episode = createEpisode(input, existing);
+  let savedToCloud = false;
 
   if (isSupabaseConfigured()) {
-    try {
-      episode = await saveNewEpisodeToDatabase(input, existing, createEpisode);
-    } catch (error) {
-      console.warn("[saveNewEpisode] Supabase:", error);
-      throw error;
-    }
-  } else if (isSupabaseConfigured() === false && process.env.NODE_ENV !== "production") {
-    console.warn(
-      "[saveNewEpisode] Supabase no configurado en este build. Revisa EXPO_PUBLIC_SUPABASE_URL en Vercel."
-    );
+    episode = await saveNewEpisodeToDatabase(input, existing, createEpisode);
+    savedToCloud = true;
   }
 
   const next = [episode, ...existing.filter((e) => e.id !== episode.id)];
   await saveEpisodes(next);
-  return episode;
+  return { episode, savedToCloud };
 }
 
 export async function saveSeasonAI(

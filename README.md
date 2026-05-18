@@ -80,9 +80,27 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 3. Marca **Production**, **Preview** y **Development**
 4. **Redeploy** (Deployments → ⋯ → Redeploy) — sin redeploy el build no recibe las variables
 
-> Si solo pones `SUPABASE_URL` sin `EXPO_PUBLIC_`, Expo en web **no las ve** y sale `Invalid supabaseUrl`.
+> Tras cambiar variables: **Deployments → Redeploy** obligatorio.
 
-En **Vercel**, añade las mismas variables en Environment Variables.
+### Build en Vercel (ajusta como en la captura)
+
+En **Settings → Build & Development**:
+
+| Campo | Valor |
+|--------|--------|
+| Build Command | `npm run build:web` |
+| Output Directory | `dist` |
+| Install Command | `npm install` |
+
+Activa **Override** en los tres si no coinciden. Debe coincidir con `vercel.json`.
+
+Tras guardar, haz **Redeploy**. Abre la consola del navegador (F12): debe salir `configurado: true` en `[Life Replay] Supabase en web`.
+
+### Fotos en Storage
+
+1. Ejecuta `supabase/storage.sql`
+2. **Authentication → Providers → Anonymous → Enable**
+3. Si la subida falla, en SQL Editor ejecuta también la política al final de `storage.sql` (bloque `Dev anon upload`, solo si hace falta)
 
 Reinicia Expo después de cambiar `.env`: `npx expo start -c`.
 

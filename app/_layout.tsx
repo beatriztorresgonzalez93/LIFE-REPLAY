@@ -1,8 +1,21 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
+import { Platform } from "react-native";
+import { getSupabaseConfigDebug, isSupabaseConfigured } from "@/lib/supabase";
 import { colors } from "@/lib/theme";
 
 export default function RootLayout() {
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      const debug = getSupabaseConfigDebug();
+      console.info("[Life Replay] Supabase en web:", {
+        configurado: isSupabaseConfigured(),
+        ...debug,
+      });
+    }
+  }, []);
+
   return (
     <>
       <StatusBar style="light" />
