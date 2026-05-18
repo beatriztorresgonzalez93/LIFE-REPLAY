@@ -134,6 +134,10 @@ export async function saveNewEpisode(
       console.warn("[saveNewEpisode] Supabase:", error);
       throw error;
     }
+  } else if (isSupabaseConfigured() === false && process.env.NODE_ENV !== "production") {
+    console.warn(
+      "[saveNewEpisode] Supabase no configurado en este build. Revisa EXPO_PUBLIC_SUPABASE_URL en Vercel."
+    );
   }
 
   const next = [episode, ...existing.filter((e) => e.id !== episode.id)];

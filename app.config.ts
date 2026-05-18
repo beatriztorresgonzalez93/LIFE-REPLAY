@@ -1,4 +1,8 @@
+import "dotenv/config";
 import type { ExpoConfig } from "expo/config";
+
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() ?? "";
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() ?? "";
 
 const config: ExpoConfig = {
   name: "Life Replay",
@@ -55,8 +59,8 @@ const config: ExpoConfig = {
     typedRoutes: true,
   },
   extra: {
-    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
-    supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    supabaseUrl,
+    supabaseAnonKey,
   },
 };
 

@@ -71,6 +71,17 @@ EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 ```
 
+**En Vercel (obligatorio para que funcione la web):**
+
+1. Proyecto → **Settings** → **Environment Variables**
+2. Añade **exactamente** estos nombres (con `EXPO_PUBLIC_`):
+   - `EXPO_PUBLIC_SUPABASE_URL` = tu Project URL
+   - `EXPO_PUBLIC_SUPABASE_ANON_KEY` = tu clave **anon public** (`eyJ...`)
+3. Marca **Production**, **Preview** y **Development**
+4. **Redeploy** (Deployments → ⋯ → Redeploy) — sin redeploy el build no recibe las variables
+
+> Si solo pones `SUPABASE_URL` sin `EXPO_PUBLIC_`, Expo en web **no las ve** y sale `Invalid supabaseUrl`.
+
 En **Vercel**, añade las mismas variables en Environment Variables.
 
 Reinicia Expo después de cambiar `.env`: `npx expo start -c`.
