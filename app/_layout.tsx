@@ -2,6 +2,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { Platform } from "react-native";
+import { EpisodesProvider } from "@/contexts/EpisodesContext";
 import { getSupabaseConfigDebug, isSupabaseConfigured } from "@/lib/supabase";
 import { colors } from "@/lib/theme";
 
@@ -17,7 +18,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <>
+    <EpisodesProvider>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -36,6 +37,6 @@ export default function RootLayout() {
         <Stack.Screen name="episode/[id]" options={{ title: "Episodio" }} />
         <Stack.Screen name="season/[year]" options={{ title: "Temporada" }} />
       </Stack>
-    </>
+    </EpisodesProvider>
   );
 }

@@ -156,17 +156,26 @@ export async function saveSeasonAI(
   }
 }
 
-/** Elimina un episodio de Supabase (si aplica) y de la caché local. */
+/** Elimina un episodio de la caché local y, si puede, de Supabase. */
 export async function deleteEpisode(
   episodeId: string,
   existing: Episode[]
 ): Promise<Episode[]> {
-  if (isSupabaseConfigured() && isDatabaseEpisodeId(episodeId)) {
-    await deleteEpisodeFromDatabase(episodeId);
+  const next = existing.filter((e) => e.id !== episodeId);
+  if (next.length === existing.length) {
+    throw new Error("Episodio no encontrado en la lista.");
   }
 
-  const next = existing.filter((e) => e.id !== episodeId);
   await saveEpisodes(next);
+
+  if (isSupabaseConfigured() && isDatabaseEpisodeId(episodeId)) {
+    try {
+      await deleteEpisodeFromDatabase(episodeId);
+    } catch (error) {
+      console.warn("[deleteEpisode] Supabase:", error);
+    }
+  }
+
   return next;
 }
 

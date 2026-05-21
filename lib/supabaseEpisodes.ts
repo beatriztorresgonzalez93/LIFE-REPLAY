@@ -187,11 +187,23 @@ export async function deleteEpisodeFromDatabase(episodeId: string) {
   const supabase = getSupabase();
   if (!supabase) return;
 
-  await ensureSupabaseSession();
+  const session = await ensureSupabaseSession();
+  const userId = session?.user.id;
+  if (!userId) throw new Error("No hay sesión de usuario");
 
-  const { error } = await supabase.from("episodes").delete().eq("id", episodeId);
+  const { data, error } = await supabase
+    .from("episodes")
+    .delete()
+    .eq("id", episodeId)
+    .eq("user_id", userId)
+    .select("id");
 
   if (error) throw new Error(error.message);
+  if (!data?.length) {
+    throw new Error(
+      "No se pudo borrar en la nube (episodio de otra sesión o ya eliminado)."
+    );
+  }
 }
 
 export function isDatabaseEpisodeId(id: string) {

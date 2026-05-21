@@ -12,25 +12,30 @@ import { Link, router, useLocalSearchParams } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { Button } from "@/components/ui/Button";
-import { deleteEpisode, formatEpisodeDate, getEpisodeById, loadEpisodes } from "@/lib/data";
+import { useEpisodes } from "@/hooks/useEpisodes";
+import { formatEpisodeDate, getEpisodeById } from "@/lib/data";
 import { getEmotion } from "@/lib/emotions";
 import { useResponsive } from "@/lib/responsive";
 import type { Episode } from "@/lib/types";
 import { colors, radius, spacing } from "@/lib/theme";
 
+function normalizeId(id: string | string[] | undefined) {
+  if (Array.isArray(id)) return id[0];
+  return id ?? "";
+}
+
 export default function EpisodeDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string }>();
+  const id = normalizeId(params.id);
   const { heroHeight, isDesktop } = useResponsive();
+  const { episodes, ready, removeEpisode } = useEpisodes();
   const [episode, setEpisode] = useState<Episode | null>(null);
-  const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    loadEpisodes().then((eps) => {
-      setEpisode(getEpisodeById(eps, id) ?? null);
-      setLoading(false);
-    });
-  }, [id]);
+    if (!ready || !id) return;
+    setEpisode(getEpisodeById(episodes, id) ?? null);
+  }, [id, episodes, ready]);
 
   function confirmDelete() {
     if (!episode) return;
@@ -54,8 +59,7 @@ export default function EpisodeDetailScreen() {
 
     setDeleting(true);
     try {
-      const all = await loadEpisodes();
-      await deleteEpisode(episode.id, all);
+      await removeEpisode(episode.id);
       router.replace("/");
     } catch (error) {
       console.error("[handleDelete]", error);
@@ -68,7 +72,7 @@ export default function EpisodeDetailScreen() {
     }
   }
 
-  if (loading) {
+  if (!ready) {
     return (
       <View style={styles.center}>
         <ActivityIndicator color={colors.accent} />
