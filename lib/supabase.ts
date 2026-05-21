@@ -1,5 +1,6 @@
 import Constants from "expo-constants";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { getFirebaseAuth, isFirebaseConfigured } from "./firebase";
 import {
   EMBEDDED_SUPABASE_ANON_KEY,
   EMBEDDED_SUPABASE_URL,
@@ -50,6 +51,10 @@ export function isValidSupabaseUrl(url: string) {
 
 let client: SupabaseClient | null = null;
 
+export function resetSupabaseClient() {
+  client = null;
+}
+
 export function getSupabase(): SupabaseClient | null {
   const { url, anonKey } = readConfig();
 
@@ -59,7 +64,17 @@ export function getSupabase(): SupabaseClient | null {
 
   if (!client) {
     try {
-      client = createClient(url, anonKey);
+      const options = isFirebaseConfigured()
+        ? {
+            accessToken: async () => {
+              const user = getFirebaseAuth().currentUser;
+              if (!user) return null;
+              return user.getIdToken(false);
+            },
+          }
+        : undefined;
+
+      client = createClient(url, anonKey, options);
     } catch (error) {
       console.warn("[getSupabase]", error);
       return null;
@@ -82,6 +97,7 @@ export function getSupabaseConfigDebug() {
     hasEmbeddedUrl: Boolean(EMBEDDED_SUPABASE_URL),
     hasEmbeddedKey: Boolean(EMBEDDED_SUPABASE_ANON_KEY),
     urlPreview: url ? `${url.slice(0, 40)}…` : "(vacío)",
+    firebaseAuth: isFirebaseConfigured(),
   };
 }
 

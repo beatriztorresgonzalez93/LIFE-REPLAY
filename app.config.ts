@@ -3,6 +3,14 @@ import type { ExpoConfig } from "expo/config";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.trim() ?? "";
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY?.trim() ?? "";
+const firebaseApiKey = process.env.EXPO_PUBLIC_FIREBASE_API_KEY?.trim() ?? "";
+const firebaseAuthDomain = process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN?.trim() ?? "";
+const firebaseProjectId = process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID?.trim() ?? "";
+const firebaseStorageBucket =
+  process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET?.trim() ?? "";
+const firebaseMessagingSenderId =
+  process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID?.trim() ?? "";
+const firebaseAppId = process.env.EXPO_PUBLIC_FIREBASE_APP_ID?.trim() ?? "";
 
 const config: ExpoConfig = {
   name: "Life Replay",
@@ -61,6 +69,12 @@ const config: ExpoConfig = {
   extra: {
     supabaseUrl,
     supabaseAnonKey,
+    firebaseApiKey,
+    firebaseAuthDomain,
+    firebaseProjectId,
+    firebaseStorageBucket,
+    firebaseMessagingSenderId,
+    firebaseAppId,
   },
 };
 

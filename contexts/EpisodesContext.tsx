@@ -8,7 +8,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { loadEpisodes, saveEpisodes, deleteEpisode } from "@/lib/data";
+import { isFirebaseConfigured } from "@/lib/firebase";
 import { groupEpisodesIntoSeasons } from "@/lib/seasons";
 import type { Episode } from "@/lib/types";
 
@@ -25,6 +27,7 @@ type EpisodesContextValue = {
 const EpisodesContext = createContext<EpisodesContextValue | null>(null);
 
 export function EpisodesProvider({ children }: { children: ReactNode }) {
+  const { user, authReady } = useAuth();
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [ready, setReady] = useState(false);
   const episodesRef = useRef(episodes);
@@ -38,8 +41,13 @@ export function EpisodesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (isFirebaseConfigured() && (!authReady || !user)) {
+      setEpisodes([]);
+      setReady(false);
+      return;
+    }
     refresh();
-  }, [refresh]);
+  }, [refresh, user?.uid, authReady]);
 
   const persist = useCallback(async (next: Episode[]) => {
     setEpisodes(next);

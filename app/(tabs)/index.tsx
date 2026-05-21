@@ -1,4 +1,4 @@
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -6,12 +6,15 @@ import { EpisodeCard } from "@/components/EpisodeCard";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { SeasonCard } from "@/components/SeasonCard";
 import { Button } from "@/components/ui/Button";
+import { useAuth } from "@/contexts/AuthContext";
 import { useEpisodes } from "@/hooks/useEpisodes";
+import { isFirebaseConfigured } from "@/lib/firebase";
 import { useResponsive } from "@/lib/responsive";
 import { colors, radius, spacing } from "@/lib/theme";
 
 export default function HomeScreen() {
   const { episodes, seasons, ready } = useEpisodes();
+  const { user, signOut } = useAuth();
   const { isDesktop, isWide } = useResponsive();
 
   if (!ready) {
@@ -31,6 +34,16 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safe} edges={["bottom"]}>
       <ScreenContainer scroll contentStyle={styles.content}>
         <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
+          {isFirebaseConfigured() && user ? (
+            <View style={styles.sessionRow}>
+              <Text style={styles.sessionEmail} numberOfLines={1}>
+                {user.email ?? user.displayName ?? "Sesión activa"}
+              </Text>
+              <Pressable onPress={() => signOut()}>
+                <Text style={styles.signOut}>Cerrar sesión</Text>
+              </Pressable>
+            </View>
+          ) : null}
           <Text style={styles.kicker}>LIFE REPLAY</Text>
           <Text style={[styles.title, isDesktop && styles.titleDesktop]}>
             Tu vida, episodio a episodio
@@ -114,6 +127,23 @@ const styles = StyleSheet.create({
   },
   heroDesktop: {
     padding: spacing.xl,
+  },
+  sessionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  sessionEmail: {
+    color: colors.muted,
+    fontSize: 12,
+    flex: 1,
+  },
+  signOut: {
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: "600",
   },
   kicker: {
     color: colors.accent,

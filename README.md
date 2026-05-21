@@ -57,10 +57,19 @@ SQL Editor → ejecuta **`supabase/storage.sql`**.
 
 ### 3. Auth (obligatorio para la base de datos)
 
-1. En Supabase → **Authentication** → **Providers** → **Anonymous** → activar **Enable**
-2. SQL Editor → ejecuta **`supabase/auth.sql`**
+**Opción A — Firebase (recomendado):** ver guía completa en [`supabase/firebase-auth.md`](supabase/firebase-auth.md).
 
-Sin el paso 3 la app no puede escribir en las tablas `episodes` / `seasons`.
+1. Crea proyecto en Firebase y activa **Email/Password** (y Google para web).
+2. Copia las variables `EXPO_PUBLIC_FIREBASE_*` a `.env` y Vercel.
+3. En Supabase → **Authentication** → activa proveedor **Firebase** (mismo Project ID).
+4. SQL Editor → ejecuta **`supabase/auth.sql`**
+
+**Opción B — solo anónimo (sin Firebase en `.env`):**
+
+1. Supabase → **Anonymous** → activar
+2. Ejecuta **`supabase/auth.sql`**
+
+Sin auth configurado la app no puede escribir en `episodes` / `seasons`.
 
 ### 4. Variables de entorno
 
@@ -69,6 +78,12 @@ Copia `.env.example` a `.env` y rellena (Project Settings → API en Supabase):
 ```env
 EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+EXPO_PUBLIC_FIREBASE_API_KEY=...
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=...
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=...
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=...
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
+EXPO_PUBLIC_FIREBASE_APP_ID=...
 ```
 
 **En Vercel (obligatorio para que funcione la web):**

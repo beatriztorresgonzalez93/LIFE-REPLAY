@@ -1,4 +1,8 @@
-import { ensureSupabaseSession, ensureUserProfile } from "./auth";
+import {
+  ensureSupabaseSession,
+  ensureUserProfile,
+  getCurrentUserId,
+} from "./auth";
 import { getSupabase } from "./supabase";
 import type { Episode, Emotion, NewEpisodeInput } from "./types";
 
@@ -101,11 +105,10 @@ export async function insertEpisodeToDatabase(
   const supabase = getSupabase();
   if (!supabase) return draft;
 
-  const session = await ensureSupabaseSession();
-  const userId = session?.user.id;
+  await ensureSupabaseSession();
+  const userId = await getCurrentUserId();
   if (!userId) throw new Error("No hay usuario de sesión");
 
-  await ensureUserProfile(userId);
   const season = await getOrCreateSeason(userId, draft.seasonYear);
 
   const { data: countRows } = await supabase
@@ -161,8 +164,8 @@ export async function updateSeasonInDatabase(
   const supabase = getSupabase();
   if (!supabase) return;
 
-  const session = await ensureSupabaseSession();
-  const userId = session?.user.id;
+  await ensureSupabaseSession();
+  const userId = await getCurrentUserId();
   if (!userId) return;
 
   const { error } = await supabase
@@ -187,8 +190,8 @@ export async function deleteEpisodeFromDatabase(episodeId: string) {
   const supabase = getSupabase();
   if (!supabase) return;
 
-  const session = await ensureSupabaseSession();
-  const userId = session?.user.id;
+  await ensureSupabaseSession();
+  const userId = await getCurrentUserId();
   if (!userId) throw new Error("No hay sesión de usuario");
 
   const { data, error } = await supabase

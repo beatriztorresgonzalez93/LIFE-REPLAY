@@ -1,7 +1,7 @@
 import { decode } from "base64-arraybuffer";
 import * as FileSystem from "expo-file-system/legacy";
 import { Platform } from "react-native";
-import { ensureSupabaseSession } from "./auth";
+import { ensureSupabaseSession, getCurrentUserId } from "./auth";
 import { EPISODE_PHOTOS_BUCKET, getSupabase, isSupabaseConfigured } from "./supabase";
 
 const UPLOAD_TIMEOUT_MS = 20_000;
@@ -125,18 +125,15 @@ async function uploadToSupabase(
 ) {
   await ensureSupabaseSession();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("No hay sesión. Activa Anonymous Auth en Supabase.");
+  const userId = await getCurrentUserId();
+  if (!userId) {
+    throw new Error("No hay sesión. Inicia sesión o activa Anonymous Auth en Supabase.");
   }
 
   const { buffer, mimeType } = await readUriAsArrayBuffer(localUri);
   const ext = guessExtension(localUri, mimeType);
   const fileName = `ep-${Date.now()}.${ext}`;
-  const path = `${user.id}/${fileName}`;
+  const path = `${userId}/${fileName}`;
   const contentType =
     mimeType && mimeType !== "application/octet-stream" ? mimeType : mimeForExt(ext);
 
