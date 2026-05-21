@@ -78,7 +78,11 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
    - `EXPO_PUBLIC_SUPABASE_URL` = tu Project URL
    - `EXPO_PUBLIC_SUPABASE_ANON_KEY` = tu clave **anon public** (`eyJ...`)
 3. Marca **Production**, **Preview** y **Development**
-4. **Redeploy** (Deployments → ⋯ → Redeploy) — sin redeploy el build no recibe las variables
+4. **Redeploy** (Deployments → ⋯ → Redeploy) — el build ejecuta `embed-env` y mete las claves en el JS
+
+En los **logs del build** en Vercel debe aparecer:
+`[embed-env] URL: https://...` y `[embed-env] Anon key: ok`
+Si sale `(vacía)`, las variables no están en Vercel.
 
 > Tras cambiar variables: **Deployments → Redeploy** obligatorio.
 

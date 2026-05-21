@@ -1,24 +1,36 @@
 import Constants from "expo-constants";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import {
+  EMBEDDED_SUPABASE_ANON_KEY,
+  EMBEDDED_SUPABASE_URL,
+} from "./env.generated";
 
 const extra = Constants.expoConfig?.extra as
   | { supabaseUrl?: string; supabaseAnonKey?: string }
   | undefined;
 
-function readConfig() {
-  const url = (
-    process.env.EXPO_PUBLIC_SUPABASE_URL ??
-    extra?.supabaseUrl ??
-    process.env.SUPABASE_URL ??
-    ""
-  ).trim();
+function firstNonEmpty(...values: (string | undefined)[]) {
+  for (const value of values) {
+    const trimmed = value?.trim();
+    if (trimmed) return trimmed;
+  }
+  return "";
+}
 
-  const anonKey = (
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
-    extra?.supabaseAnonKey ??
-    process.env.SUPABASE_ANON_KEY ??
-    ""
-  ).trim();
+function readConfig() {
+  const url = firstNonEmpty(
+    process.env.EXPO_PUBLIC_SUPABASE_URL,
+    extra?.supabaseUrl,
+    EMBEDDED_SUPABASE_URL,
+    process.env.SUPABASE_URL
+  );
+
+  const anonKey = firstNonEmpty(
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+    extra?.supabaseAnonKey,
+    EMBEDDED_SUPABASE_ANON_KEY,
+    process.env.SUPABASE_ANON_KEY
+  );
 
   return { url, anonKey };
 }
@@ -35,8 +47,6 @@ export function isValidSupabaseUrl(url: string) {
     return false;
   }
 }
-
-const config = readConfig();
 
 let client: SupabaseClient | null = null;
 
@@ -69,7 +79,9 @@ export function getSupabaseConfigDebug() {
     hasUrl: Boolean(url),
     urlValid: isValidSupabaseUrl(url),
     hasKey: Boolean(anonKey),
-    urlPreview: url ? `${url.slice(0, 30)}…` : "(vacío)",
+    hasEmbeddedUrl: Boolean(EMBEDDED_SUPABASE_URL),
+    hasEmbeddedKey: Boolean(EMBEDDED_SUPABASE_ANON_KEY),
+    urlPreview: url ? `${url.slice(0, 40)}…` : "(vacío)",
   };
 }
 

@@ -15,6 +15,7 @@ import { EmotionPicker } from "@/components/ui/EmotionPicker";
 import { Field } from "@/components/ui/Field";
 import { PhotoPicker } from "@/components/ui/PhotoPicker";
 import { useEpisodes } from "@/hooks/useEpisodes";
+import { ensureSupabaseSession } from "@/lib/auth";
 import { saveNewEpisode } from "@/lib/data";
 import { uploadEpisodePhoto } from "@/lib/uploadPhoto";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -42,9 +43,23 @@ export default function NewEpisodeScreen() {
 
     setSaving(true);
     try {
-      const photoUrl = photoUri
-        ? await uploadEpisodePhoto(photoUri)
-        : DEFAULT_PHOTO;
+      if (isSupabaseConfigured()) {
+        await ensureSupabaseSession();
+      }
+
+      let photoUrl = DEFAULT_PHOTO;
+      if (photoUri) {
+        try {
+          photoUrl = await uploadEpisodePhoto(photoUri);
+        } catch (photoError) {
+          console.warn("[handleSave] foto:", photoError);
+          Alert.alert(
+            "Foto no subida",
+            "Se guardará el episodio con una imagen por defecto. El resto de datos sí se guardan."
+          );
+          photoUrl = DEFAULT_PHOTO;
+        }
+      }
 
       const { episode, savedToCloud } = await saveNewEpisode(
         {

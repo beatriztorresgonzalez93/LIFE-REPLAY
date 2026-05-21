@@ -73,10 +73,11 @@ export async function uploadEpisodePhoto(localUri: string): Promise<string> {
   }
 
   if (!isSupabaseConfigured()) {
+    console.warn(
+      "[uploadEpisodePhoto] Supabase no configurado — usa foto por defecto o local"
+    );
     if (Platform.OS === "web") {
-      throw new Error(
-        "Supabase no está configurado en este build. Añade EXPO_PUBLIC_SUPABASE_URL en Vercel y haz Redeploy."
-      );
+      return DEFAULT_PHOTO;
     }
     return localUri;
   }

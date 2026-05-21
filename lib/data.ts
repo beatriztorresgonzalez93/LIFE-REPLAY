@@ -130,8 +130,12 @@ export async function saveNewEpisode(
   let savedToCloud = false;
 
   if (isSupabaseConfigured()) {
-    episode = await saveNewEpisodeToDatabase(input, existing, createEpisode);
-    savedToCloud = true;
+    try {
+      episode = await saveNewEpisodeToDatabase(input, existing, createEpisode);
+      savedToCloud = true;
+    } catch (error) {
+      console.warn("[saveNewEpisode] Supabase:", error);
+    }
   }
 
   const next = [episode, ...existing.filter((e) => e.id !== episode.id)];

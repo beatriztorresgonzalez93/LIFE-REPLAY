@@ -1,4 +1,4 @@
-import { ensureSupabaseSession } from "./auth";
+import { ensureSupabaseSession, ensureUserProfile } from "./auth";
 import { getSupabase } from "./supabase";
 import type { Episode, Emotion, NewEpisodeInput } from "./types";
 
@@ -105,6 +105,7 @@ export async function insertEpisodeToDatabase(
   const userId = session?.user.id;
   if (!userId) throw new Error("No hay usuario de sesión");
 
+  await ensureUserProfile(userId);
   const season = await getOrCreateSeason(userId, draft.seasonYear);
 
   const { data: countRows } = await supabase
