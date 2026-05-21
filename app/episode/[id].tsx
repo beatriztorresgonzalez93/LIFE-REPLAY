@@ -13,7 +13,10 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { Button } from "@/components/ui/Button";
 import { useEpisodes } from "@/hooks/useEpisodes";
+import { confirmDestructive } from "@/lib/confirm";
 import { formatEpisodeDate, getEpisodeById } from "@/lib/data";
+import { ensureSupabaseSession } from "@/lib/auth";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { getEmotion } from "@/lib/emotions";
 import { useResponsive } from "@/lib/responsive";
 import type { Episode } from "@/lib/types";
@@ -37,21 +40,14 @@ export default function EpisodeDetailScreen() {
     setEpisode(getEpisodeById(episodes, id) ?? null);
   }, [id, episodes, ready]);
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!episode) return;
 
-    Alert.alert(
+    const ok = await confirmDestructive(
       "Eliminar episodio",
-      "¿Seguro que quieres borrar este capítulo? No se puede deshacer.",
-      [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: "Eliminar",
-          style: "destructive",
-          onPress: handleDelete,
-        },
-      ]
+      "¿Seguro que quieres borrar este capítulo? No se puede deshacer."
     );
+    if (ok) await handleDelete();
   }
 
   async function handleDelete() {
@@ -59,8 +55,17 @@ export default function EpisodeDetailScreen() {
 
     setDeleting(true);
     try {
-      await removeEpisode(episode.id);
+      if (isSupabaseConfigured()) {
+        await ensureSupabaseSession();
+      }
+      const { deletedFromCloud } = await removeEpisode(episode.id);
       router.replace("/");
+      if (!deletedFromCloud && isSupabaseConfigured()) {
+        Alert.alert(
+          "Eliminado en pantalla",
+          "No se pudo borrar en Supabase (sesión distinta a la que creó el episodio). En Supabase → Table Editor → episodes puedes borrar la fila manualmente, o en el navegador: Ajustes del sitio → Borrar datos."
+        );
+      }
     } catch (error) {
       console.error("[handleDelete]", error);
       Alert.alert(

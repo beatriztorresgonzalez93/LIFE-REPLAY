@@ -47,9 +47,9 @@ export function EpisodesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const removeEpisode = useCallback(async (episodeId: string) => {
-    const next = await deleteEpisode(episodeId, episodesRef.current);
-    setEpisodes(next);
-    return next;
+    const result = await deleteEpisode(episodeId, episodesRef.current);
+    setEpisodes(result.episodes);
+    return result;
   }, []);
 
   const seasons = useMemo(

@@ -53,6 +53,15 @@ export default function NewEpisodeScreen() {
           photoUrl = await uploadEpisodePhoto(photoUri);
         } catch (photoError) {
           console.warn("[handleSave] foto:", photoError);
+          if (Platform.OS === "web") {
+            Alert.alert(
+              "Foto no subida",
+              photoError instanceof Error
+                ? photoError.message
+                : "No se pudo subir la imagen. El episodio no se guardará hasta que la foto funcione."
+            );
+            return;
+          }
           Alert.alert(
             "Foto no subida",
             "Se guardará el episodio con una imagen por defecto. El resto de datos sí se guardan."

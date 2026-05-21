@@ -160,7 +160,7 @@ export async function saveSeasonAI(
 export async function deleteEpisode(
   episodeId: string,
   existing: Episode[]
-): Promise<Episode[]> {
+): Promise<{ episodes: Episode[]; deletedFromCloud: boolean }> {
   const next = existing.filter((e) => e.id !== episodeId);
   if (next.length === existing.length) {
     throw new Error("Episodio no encontrado en la lista.");
@@ -168,15 +168,19 @@ export async function deleteEpisode(
 
   await saveEpisodes(next);
 
+  let deletedFromCloud = !isDatabaseEpisodeId(episodeId);
+
   if (isSupabaseConfigured() && isDatabaseEpisodeId(episodeId)) {
     try {
       await deleteEpisodeFromDatabase(episodeId);
+      deletedFromCloud = true;
     } catch (error) {
+      deletedFromCloud = false;
       console.warn("[deleteEpisode] Supabase:", error);
     }
   }
 
-  return next;
+  return { episodes: next, deletedFromCloud };
 }
 
 export function createEpisode(input: NewEpisodeInput, existing: Episode[]): Episode {

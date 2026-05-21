@@ -14,6 +14,7 @@ function isLocalUri(uri: string) {
     uri.startsWith("file://") ||
     uri.startsWith("content://") ||
     uri.startsWith("blob:") ||
+    uri.startsWith("data:") ||
     uri.startsWith("ph://") ||
     uri.startsWith("assets-library://")
   );
@@ -42,9 +43,25 @@ function mimeForExt(ext: string) {
   return map[ext] ?? "image/jpeg";
 }
 
+function readDataUrl(uri: string): { buffer: ArrayBuffer; mimeType?: string } {
+  const comma = uri.indexOf(",");
+  if (comma === -1) throw new Error("Data URL de imagen no válida");
+  const header = uri.slice(0, comma);
+  const base64 = uri.slice(comma + 1);
+  const mimeMatch = header.match(/data:([^;]+)/);
+  return { buffer: decode(base64), mimeType: mimeMatch?.[1] };
+}
+
 async function readUriAsArrayBuffer(uri: string): Promise<{ buffer: ArrayBuffer; mimeType?: string }> {
+  if (uri.startsWith("data:")) {
+    return readDataUrl(uri);
+  }
+
   if (Platform.OS === "web") {
     const response = await fetch(uri);
+    if (!response.ok) {
+      throw new Error("No se pudo leer la imagen del navegador (blob expirado). Vuelve a elegir la foto.");
+    }
     const blob = await response.blob();
     return { buffer: await blob.arrayBuffer(), mimeType: blob.type };
   }

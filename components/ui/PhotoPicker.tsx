@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   Alert,
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -45,18 +46,29 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
     return true;
   }
 
+  function uriFromAsset(asset: ImagePicker.ImagePickerAsset) {
+    if (Platform.OS === "web" && asset.base64) {
+      const mime = asset.mimeType ?? "image/jpeg";
+      return `data:${mime};base64,${asset.base64}`;
+    }
+    return asset.uri;
+  }
+
+  const pickerOptions: ImagePicker.ImagePickerOptions = {
+    mediaTypes: ["images"],
+    allowsEditing: true,
+    aspect: [16, 9],
+    quality: 0.85,
+    base64: Platform.OS === "web",
+  };
+
   async function takePhoto() {
     if (!(await ensureCameraPermission())) return;
     setLoading(true);
     try {
-      const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ["images"],
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 0.85,
-      });
+      const result = await ImagePicker.launchCameraAsync(pickerOptions);
       if (!result.canceled && result.assets[0]) {
-        onChange(result.assets[0].uri);
+        onChange(uriFromAsset(result.assets[0]));
       }
     } finally {
       setLoading(false);
@@ -67,14 +79,9 @@ export function PhotoPicker({ value, onChange }: PhotoPickerProps) {
     if (!(await ensureLibraryPermission())) return;
     setLoading(true);
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ["images"],
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 0.85,
-      });
+      const result = await ImagePicker.launchImageLibraryAsync(pickerOptions);
       if (!result.canceled && result.assets[0]) {
-        onChange(result.assets[0].uri);
+        onChange(uriFromAsset(result.assets[0]));
       }
     } finally {
       setLoading(false);
