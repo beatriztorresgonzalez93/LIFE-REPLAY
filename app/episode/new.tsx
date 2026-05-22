@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -16,14 +17,12 @@ import { Field } from "@/components/ui/Field";
 import { PhotoPicker } from "@/components/ui/PhotoPicker";
 import { useEpisodes } from "@/hooks/useEpisodes";
 import { ensureSupabaseSession } from "@/lib/auth";
-import { saveNewEpisode } from "@/lib/data";
+import { formatEpisodeDate, saveNewEpisode, todayIsoDate } from "@/lib/data";
 import { uploadEpisodePhoto } from "@/lib/uploadPhoto";
+import { DEFAULT_EPISODE_PHOTO } from "@/lib/episodePhoto";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Emotion } from "@/lib/types";
 import { colors, spacing } from "@/lib/theme";
-
-const DEFAULT_PHOTO =
-  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80";
 
 export default function NewEpisodeScreen() {
   const { episodes, setEpisodes } = useEpisodes();
@@ -34,6 +33,15 @@ export default function NewEpisodeScreen() {
   const [emotion, setEmotion] = useState<Emotion>("hope");
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const currentYear = new Date().getFullYear();
+  const [seasonYear, setSeasonYear] = useState(currentYear);
+  const [date, setDate] = useState(todayIsoDate());
+
+  const seasonYears = useMemo(() => {
+    const years = new Set(episodes.map((e) => e.seasonYear));
+    years.add(currentYear);
+    return [...years].sort((a, b) => b - a);
+  }, [episodes, currentYear]);
 
   async function handleSave() {
     if (!thought.trim() || !songTitle.trim() || !songArtist.trim()) {
@@ -47,26 +55,16 @@ export default function NewEpisodeScreen() {
         await ensureSupabaseSession();
       }
 
-      let photoUrl = DEFAULT_PHOTO;
+      let photoUrl = DEFAULT_EPISODE_PHOTO;
       if (photoUri) {
         try {
           photoUrl = await uploadEpisodePhoto(photoUri);
         } catch (photoError) {
           console.warn("[handleSave] foto:", photoError);
-          if (Platform.OS === "web") {
-            Alert.alert(
-              "Foto no subida",
-              photoError instanceof Error
-                ? photoError.message
-                : "No se pudo subir la imagen. El episodio no se guardará hasta que la foto funcione."
-            );
-            return;
-          }
           Alert.alert(
             "Foto no subida",
-            "Se guardará el episodio con una imagen por defecto. El resto de datos sí se guardan."
+            "Se guardará el episodio con una imagen por defecto. Puedes cambiarla editando más tarde."
           );
-          photoUrl = DEFAULT_PHOTO;
         }
       }
 
@@ -78,6 +76,8 @@ export default function NewEpisodeScreen() {
           songUrl: songUrl.trim() || undefined,
           emotion,
           photoUrl,
+          seasonYear,
+          date: date.trim() || undefined,
         },
         episodes
       );
@@ -121,10 +121,44 @@ export default function NewEpisodeScreen() {
           scrollProps={{ keyboardShouldPersistTaps: "handled" }}
         >
           <Text style={styles.kicker}>NUEVO CAPÍTULO</Text>
-          <Text style={styles.title}>Episodio de hoy</Text>
+          <Text style={styles.title}>Nuevo episodio</Text>
           <Text style={styles.subtitle}>
-            Haz una foto con la cámara o elige una de tu galería.
+            Se suma a los episodios de demo que ya tienes. Foto opcional (si falla
+            la subida, se usa una imagen por defecto).
           </Text>
+
+          <View style={styles.block}>
+            <Text style={styles.label}>Temporada</Text>
+            <View style={styles.yearRow}>
+              {seasonYears.map((year) => (
+                <Pressable
+                  key={year}
+                  style={[styles.yearChip, seasonYear === year && styles.yearChipActive]}
+                  onPress={() => setSeasonYear(year)}
+                >
+                  <Text
+                    style={[
+                      styles.yearChipText,
+                      seasonYear === year && styles.yearChipTextActive,
+                    ]}
+                  >
+                    {year}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          <Field
+            label="Fecha"
+            placeholder="2026-05-21"
+            value={date}
+            onChangeText={setDate}
+            autoCapitalize="none"
+          />
+          {/^\d{4}-\d{2}-\d{2}$/.test(date.trim()) ? (
+            <Text style={styles.datePreview}>{formatEpisodeDate(date.trim())}</Text>
+          ) : null}
 
           <View style={styles.block}>
             <Text style={styles.label}>Foto del día</Text>
@@ -172,7 +206,11 @@ export default function NewEpisodeScreen() {
             <EmotionPicker value={emotion} onChange={setEmotion} />
           </View>
 
-          <Button title="Guardar episodio de hoy" onPress={handleSave} loading={saving} />
+          <Button
+            title={`Guardar en temporada ${seasonYear}`}
+            onPress={handleSave}
+            loading={saving}
+          />
         </ScreenContainer>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -207,6 +245,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: spacing.sm,
   },
+  datePreview: {
+    color: colors.accent,
+    fontSize: 13,
+    marginTop: -4,
+  },
   block: {
     gap: spacing.sm,
   },
@@ -228,5 +271,29 @@ const styles = StyleSheet.create({
   rowItem: {
     flex: 1,
     minWidth: 200,
+  },
+  yearRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  yearChip: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  yearChipActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.surface,
+  },
+  yearChipText: {
+    color: colors.muted,
+    fontWeight: "600",
+    fontSize: 14,
+  },
+  yearChipTextActive: {
+    color: colors.foreground,
   },
 });

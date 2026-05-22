@@ -6,9 +6,6 @@ import { EPISODE_PHOTOS_BUCKET, getSupabase, isSupabaseConfigured } from "./supa
 
 const UPLOAD_TIMEOUT_MS = 20_000;
 
-const DEFAULT_PHOTO =
-  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80";
-
 function isLocalUri(uri: string) {
   return (
     uri.startsWith("file://") ||
@@ -60,7 +57,7 @@ async function readUriAsArrayBuffer(uri: string): Promise<{ buffer: ArrayBuffer;
   if (Platform.OS === "web") {
     const response = await fetch(uri);
     if (!response.ok) {
-      throw new Error("No se pudo leer la imagen del navegador (blob expirado). Vuelve a elegir la foto.");
+      throw new Error("No se pudo leer la imagen. Vuelve a elegir la foto.");
     }
     const blob = await response.blob();
     return { buffer: await blob.arrayBuffer(), mimeType: blob.type };
@@ -81,27 +78,19 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   ]);
 }
 
-/**
- * Sube foto a Supabase Storage. Devuelve URL pública https.
- */
+/** Sube foto a Supabase Storage. Devuelve URL pública https. */
 export async function uploadEpisodePhoto(localUri: string): Promise<string> {
   if (!isLocalUri(localUri)) {
     return localUri;
   }
 
   if (!isSupabaseConfigured()) {
-    console.warn(
-      "[uploadEpisodePhoto] Supabase no configurado — usa foto por defecto o local"
-    );
-    if (Platform.OS === "web") {
-      return DEFAULT_PHOTO;
-    }
-    return localUri;
+    throw new Error("Supabase no configurado. Añade EXPO_PUBLIC_SUPABASE_URL y ANON_KEY.");
   }
 
   const supabase = getSupabase();
   if (!supabase) {
-    return DEFAULT_PHOTO;
+    throw new Error("No se pudo conectar con Supabase.");
   }
 
   try {
@@ -113,9 +102,7 @@ export async function uploadEpisodePhoto(localUri: string): Promise<string> {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Error al subir la foto";
     console.warn("[uploadEpisodePhoto]", message);
-    throw new Error(
-      `${message}. Comprueba Storage (episode-photos) y que Anonymous Auth esté activo en Supabase.`
-    );
+    throw new Error(message);
   }
 }
 
@@ -127,7 +114,7 @@ async function uploadToSupabase(
 
   const userId = await getCurrentUserId();
   if (!userId) {
-    throw new Error("No hay sesión. Inicia sesión o activa Anonymous Auth en Supabase.");
+    throw new Error("No hay sesión. Activa Anonymous Auth en Supabase → Authentication.");
   }
 
   const { buffer, mimeType } = await readUriAsArrayBuffer(localUri);

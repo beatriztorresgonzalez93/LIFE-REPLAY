@@ -13,12 +13,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
 import { useAuth } from "@/contexts/AuthContext";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { colors, spacing } from "@/lib/theme";
 
 type Mode = "login" | "register";
 
 export default function LoginScreen() {
-  const { signInEmail, signUpEmail, signInGoogle, initializing } = useAuth();
+  const { signInEmail, signUpEmail, initializing } = useAuth();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,6 +29,10 @@ export default function LoginScreen() {
 
   async function handleSubmit() {
     setError(null);
+    if (!isSupabaseConfigured()) {
+      setError("Configura EXPO_PUBLIC_SUPABASE_URL y ANON_KEY en .env");
+      return;
+    }
     if (!email.trim() || !password) {
       setError("Introduce email y contraseña.");
       return;
@@ -47,19 +52,6 @@ export default function LoginScreen() {
       router.replace("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al autenticar");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleGoogle() {
-    setError(null);
-    setLoading(true);
-    try {
-      await signInGoogle();
-      router.replace("/");
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error con Google");
     } finally {
       setLoading(false);
     }
@@ -85,7 +77,8 @@ export default function LoginScreen() {
             {mode === "login" ? "Inicia sesión" : "Crea tu cuenta"}
           </Text>
           <Text style={styles.subtitle}>
-            Tus episodios se guardan en tu cuenta (Firebase + Supabase).
+            Cuenta con email y contraseña (Supabase Auth). Tus episodios y fotos
+            quedan en tu usuario.
           </Text>
 
           <View style={styles.tabs}>
@@ -93,9 +86,7 @@ export default function LoginScreen() {
               style={[styles.tab, mode === "login" && styles.tabActive]}
               onPress={() => setMode("login")}
             >
-              <Text
-                style={[styles.tabText, mode === "login" && styles.tabTextActive]}
-              >
+              <Text style={[styles.tabText, mode === "login" && styles.tabTextActive]}>
                 Entrar
               </Text>
             </Pressable>
@@ -104,10 +95,7 @@ export default function LoginScreen() {
               onPress={() => setMode("register")}
             >
               <Text
-                style={[
-                  styles.tabText,
-                  mode === "register" && styles.tabTextActive,
-                ]}
+                style={[styles.tabText, mode === "register" && styles.tabTextActive]}
               >
                 Registro
               </Text>
@@ -150,18 +138,10 @@ export default function LoginScreen() {
             loading={loading}
           />
 
-          {Platform.OS === "web" ? (
-            <Button
-              title="Continuar con Google"
-              variant="secondary"
-              onPress={handleGoogle}
-              loading={loading}
-            />
-          ) : null}
-
           <Text style={styles.hint}>
-            En Firebase Console activa Email/Password. En Supabase activa Firebase
-            en Authentication → Third-party.
+            En Supabase: Authentication → Providers → Email activado. Si el
+            registro pide confirmar email, revisa tu bandeja o desactiva
+            “Confirm email” en Supabase para pruebas.
           </Text>
         </View>
       </KeyboardAvoidingView>
@@ -170,13 +150,8 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  flex: {
-    flex: 1,
-  },
+  safe: { flex: 1, backgroundColor: colors.background },
+  flex: { flex: 1 },
   center: {
     flex: 1,
     alignItems: "center",
@@ -198,21 +173,9 @@ const styles = StyleSheet.create({
     letterSpacing: 3,
     fontWeight: "700",
   },
-  title: {
-    color: colors.foreground,
-    fontSize: 28,
-    fontWeight: "700",
-  },
-  subtitle: {
-    color: colors.muted,
-    fontSize: 14,
-    lineHeight: 20,
-    marginBottom: spacing.sm,
-  },
-  tabs: {
-    flexDirection: "row",
-    gap: spacing.sm,
-  },
+  title: { color: colors.foreground, fontSize: 28, fontWeight: "700" },
+  subtitle: { color: colors.muted, fontSize: 14, lineHeight: 20, marginBottom: spacing.sm },
+  tabs: { flexDirection: "row", gap: spacing.sm },
   tab: {
     flex: 1,
     paddingVertical: spacing.sm,
@@ -221,25 +184,9 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     alignItems: "center",
   },
-  tabActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.surface,
-  },
-  tabText: {
-    color: colors.muted,
-    fontWeight: "600",
-  },
-  tabTextActive: {
-    color: colors.foreground,
-  },
-  error: {
-    color: "#f87171",
-    fontSize: 13,
-  },
-  hint: {
-    color: colors.muted,
-    fontSize: 11,
-    lineHeight: 16,
-    marginTop: spacing.sm,
-  },
+  tabActive: { borderColor: colors.accent, backgroundColor: colors.surface },
+  tabText: { color: colors.muted, fontWeight: "600" },
+  tabTextActive: { color: colors.foreground },
+  error: { color: "#f87171", fontSize: 13 },
+  hint: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: spacing.sm },
 });

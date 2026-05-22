@@ -1,6 +1,5 @@
 import Constants from "expo-constants";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
-import { getFirebaseAuth, isFirebaseConfigured } from "./firebase";
 import {
   EMBEDDED_SUPABASE_ANON_KEY,
   EMBEDDED_SUPABASE_URL,
@@ -20,15 +19,15 @@ function firstNonEmpty(...values: (string | undefined)[]) {
 
 function readConfig() {
   const url = firstNonEmpty(
-    process.env.EXPO_PUBLIC_SUPABASE_URL,
     extra?.supabaseUrl,
+    process.env.EXPO_PUBLIC_SUPABASE_URL,
     EMBEDDED_SUPABASE_URL,
     process.env.SUPABASE_URL
   );
 
   const anonKey = firstNonEmpty(
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
     extra?.supabaseAnonKey,
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
     EMBEDDED_SUPABASE_ANON_KEY,
     process.env.SUPABASE_ANON_KEY
   );
@@ -64,17 +63,7 @@ export function getSupabase(): SupabaseClient | null {
 
   if (!client) {
     try {
-      const options = isFirebaseConfigured()
-        ? {
-            accessToken: async () => {
-              const user = getFirebaseAuth().currentUser;
-              if (!user) return null;
-              return user.getIdToken(false);
-            },
-          }
-        : undefined;
-
-      client = createClient(url, anonKey, options);
+      client = createClient(url, anonKey);
     } catch (error) {
       console.warn("[getSupabase]", error);
       return null;
@@ -97,7 +86,6 @@ export function getSupabaseConfigDebug() {
     hasEmbeddedUrl: Boolean(EMBEDDED_SUPABASE_URL),
     hasEmbeddedKey: Boolean(EMBEDDED_SUPABASE_ANON_KEY),
     urlPreview: url ? `${url.slice(0, 40)}…` : "(vacío)",
-    firebaseAuth: isFirebaseConfigured(),
   };
 }
 

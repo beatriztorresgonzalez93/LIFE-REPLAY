@@ -33,7 +33,10 @@ create table if not exists episodes (
   song_artist text not null,
   song_url text,
   emotion text not null check (
-    emotion in ('joy','sadness','anxiety','love','anger','calm','hope','nostalgia')
+    emotion in (
+      'joy','sadness','anxiety','love','anger','calm','hope','nostalgia',
+      'gratitude','pride','fear','loneliness','surprise','tiredness'
+    )
   ),
   photo_url text not null,
   created_at timestamptz default now(),

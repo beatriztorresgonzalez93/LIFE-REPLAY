@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { loadEpisodes, saveEpisodes, deleteEpisode } from "@/lib/data";
-import { isFirebaseConfigured } from "@/lib/firebase";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { groupEpisodesIntoSeasons } from "@/lib/seasons";
 import type { Episode } from "@/lib/types";
 
@@ -21,13 +21,13 @@ type EpisodesContextValue = {
   refresh: () => Promise<Episode[]>;
   setEpisodes: (episodes: Episode[]) => void;
   persist: (next: Episode[]) => Promise<void>;
-  removeEpisode: (episodeId: string) => Promise<Episode[]>;
+  removeEpisode: (episodeId: string) => Promise<{ episodes: Episode[]; deletedFromCloud: boolean }>;
 };
 
 const EpisodesContext = createContext<EpisodesContextValue | null>(null);
 
 export function EpisodesProvider({ children }: { children: ReactNode }) {
-  const { user, authReady } = useAuth();
+  const { user, initializing: authLoading } = useAuth();
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [ready, setReady] = useState(false);
   const episodesRef = useRef(episodes);
@@ -41,13 +41,13 @@ export function EpisodesProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (isFirebaseConfigured() && (!authReady || !user)) {
+    if (isSupabaseConfigured() && (authLoading || !user)) {
       setEpisodes([]);
       setReady(false);
       return;
     }
     refresh();
-  }, [refresh, user?.uid, authReady]);
+  }, [refresh, user?.id, authLoading]);
 
   const persist = useCallback(async (next: Episode[]) => {
     setEpisodes(next);

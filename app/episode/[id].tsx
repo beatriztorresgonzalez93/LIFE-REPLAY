@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Image,
   Linking,
   StyleSheet,
   Text,
@@ -10,6 +9,7 @@ import {
 } from "react-native";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { EpisodeImage } from "@/components/EpisodeImage";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { Button } from "@/components/ui/Button";
 import { useEpisodes } from "@/hooks/useEpisodes";
@@ -107,7 +107,7 @@ export default function EpisodeDetailScreen() {
           isDesktop && styles.heroDesktop,
         ]}
       >
-        <Image source={{ uri: episode.photoUrl }} style={styles.heroImage} />
+        <EpisodeImage uri={episode.photoUrl} style={styles.heroImage} />
         <View style={styles.heroOverlay} />
         <View style={styles.heroText}>
           <Text style={styles.date}>{formatEpisodeDate(episode.date)}</Text>
@@ -194,10 +194,8 @@ const styles = StyleSheet.create({
     bottom: spacing.lg,
   },
   date: {
-    color: "rgba(255,255,255,0.75)",
-    fontSize: 11,
-    letterSpacing: 2,
-    textTransform: "uppercase",
+    color: "rgba(255,255,255,0.85)",
+    fontSize: 14,
   },
   title: {
     color: "#fff",

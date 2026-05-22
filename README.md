@@ -55,21 +55,15 @@ SQL Editor → pega y ejecuta `supabase/schema.sql`.
 
 SQL Editor → ejecuta **`supabase/storage.sql`**.
 
-### 3. Auth (obligatorio para la base de datos)
+### 3. Auth (Supabase — login email/contraseña)
 
-**Opción A — Firebase (recomendado):** ver guía completa en [`supabase/firebase-auth.md`](supabase/firebase-auth.md).
+Guía: [`supabase/supabase-email-auth.md`](supabase/supabase-email-auth.md)
 
-1. Crea proyecto en Firebase y activa **Email/Password** (y Google para web).
-2. Copia las variables `EXPO_PUBLIC_FIREBASE_*` a `.env` y Vercel.
-3. En Supabase → **Authentication** → activa proveedor **Firebase** (mismo Project ID).
-4. SQL Editor → ejecuta **`supabase/auth.sql`**
+1. Supabase → **Authentication** → **Providers** → **Email** → activar
+2. SQL Editor → **`supabase/auth.sql`** + **`supabase/supabase-auth-reset.sql`**
+3. Regístrate en la app (pantalla Entrar / Registro)
 
-**Opción B — solo anónimo (sin Firebase en `.env`):**
-
-1. Supabase → **Anonymous** → activar
-2. Ejecuta **`supabase/auth.sql`**
-
-Sin auth configurado la app no puede escribir en `episodes` / `seasons`.
+Las fotos van a **Supabase Storage** (`episode-photos`). No hace falta Firebase.
 
 ### 4. Variables de entorno
 
@@ -78,13 +72,18 @@ Copia `.env.example` a `.env` y rellena (Project Settings → API en Supabase):
 ```env
 EXPO_PUBLIC_SUPABASE_URL=https://xxxx.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-EXPO_PUBLIC_FIREBASE_API_KEY=...
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=...
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=...
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=...
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
-EXPO_PUBLIC_FIREBASE_APP_ID=...
+EXPO_PUBLIC_GROQ_API_KEY=gsk_...
 ```
+
+**Groq (conclusión de temporada con IA):**
+
+1. Crea una API key en [console.groq.com](https://console.groq.com)
+2. Añade `EXPO_PUBLIC_GROQ_API_KEY` en `.env` y en Vercel (mismo nombre)
+3. Redeploy / reinicia Expo (`npx expo start -c`)
+
+Sin la clave, el botón «Generar con IA» usa plantillas locales (modo demo).
+
+> La clave va en el cliente (`EXPO_PUBLIC_`), visible en el bundle. Para producción pública conviene un proxy (Edge Function / API route).
 
 **En Vercel (obligatorio para que funcione la web):**
 
@@ -92,6 +91,7 @@ EXPO_PUBLIC_FIREBASE_APP_ID=...
 2. Añade **exactamente** estos nombres (con `EXPO_PUBLIC_`):
    - `EXPO_PUBLIC_SUPABASE_URL` = tu Project URL
    - `EXPO_PUBLIC_SUPABASE_ANON_KEY` = tu clave **anon public** (`eyJ...`)
+   - `EXPO_PUBLIC_GROQ_API_KEY` = tu clave Groq (`gsk_...`) — opcional pero necesaria para IA real
 3. Marca **Production**, **Preview** y **Development**
 4. **Redeploy** (Deployments → ⋯ → Redeploy) — el build ejecuta `embed-env` y mete las claves en el JS
 
@@ -115,12 +115,6 @@ Activa **Override** en los tres si no coinciden. Debe coincidir con `vercel.json
 
 Tras guardar, haz **Redeploy**. Abre la consola del navegador (F12): debe salir `configurado: true` en `[Life Replay] Supabase en web`.
 
-### Fotos en Storage
-
-1. Ejecuta `supabase/storage.sql`
-2. **Authentication → Providers → Anonymous → Enable**
-3. Si la subida falla, en SQL Editor ejecuta también la política al final de `storage.sql` (bloque `Dev anon upload`, solo si hace falta)
-
 Reinicia Expo después de cambiar `.env`: `npx expo start -c`.
 
 ## Stack
@@ -128,7 +122,7 @@ Reinicia Expo después de cambiar `.env`: `npx expo start -c`.
 - Expo SDK 54 + Expo Router
 - React Native
 - TypeScript
-- AsyncStorage + **Supabase** (PostgreSQL + Storage + auth anónima)
+- AsyncStorage + **Supabase** (PostgreSQL + Storage + auth email/contraseña)
 - expo-image-picker (cámara + galería)
 
 ## Estructura
@@ -138,10 +132,15 @@ app/           # Pantallas (Expo Router)
 components/    # UI, cards, PhotoPicker
 hooks/         # useEpisodes
 lib/           # tipos, datos, IA mock, temporadas
-supabase/      # schema.sql, storage.sql
+supabase/      # schema.sql, storage.sql, auth.sql, supabase-auth-reset.sql
 ```
+
+## Exportar recap de temporada
+
+En la pantalla de una temporada: **Descargar recap (PNG)** — imagen con foto de portada, título, sinopsis, conclusión y miniaturas. En web descarga directa; en móvil abre el menú compartir/guardar.
 
 ## Próximos pasos
 
-1. Login con email/Google (opcional, además del anónimo)
-2. API real de IA (OpenAI / Gemini)
+1. Login con Google (OAuth en Supabase, opcional)
+2. Proxy servidor para la clave Groq (no exponerla en el bundle)
+3. Vídeo recap (opcional, más complejo)

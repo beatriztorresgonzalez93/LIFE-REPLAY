@@ -11,7 +11,8 @@ interface EmotionPickerProps {
 
 export function EmotionPicker({ value, onChange }: EmotionPickerProps) {
   const { emotionColumns } = useResponsive();
-  const itemBasis = emotionColumns === 4 ? "23%" : "47%";
+  const itemBasis =
+    emotionColumns === 4 ? "23%" : emotionColumns === 3 ? "31%" : "47%";
 
   return (
     <View style={styles.grid}>

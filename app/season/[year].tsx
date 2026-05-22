@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Image,
+  Alert,
   StyleSheet,
   Text,
   View,
@@ -9,8 +9,11 @@ import {
 import { useLocalSearchParams } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { EpisodeCard } from "@/components/EpisodeCard";
+import { EpisodeImage } from "@/components/EpisodeImage";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { SeasonRecapPoster } from "@/components/SeasonRecapPoster";
 import { Button } from "@/components/ui/Button";
+import { exportRecapPoster } from "@/lib/exportRecapImage";
 import { generateSeasonSummary } from "@/lib/ai";
 import { loadEpisodes, saveSeasonAI } from "@/lib/data";
 import { useResponsive } from "@/lib/responsive";
@@ -25,6 +28,9 @@ export default function SeasonScreen() {
   const [season, setSeason] = useState<Season | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const recapRef = useRef<View>(null);
 
   useEffect(() => {
     loadEpisodes().then((eps) => {
@@ -34,20 +40,40 @@ export default function SeasonScreen() {
     });
   }, [year]);
 
+  async function handleDownloadRecap() {
+    if (!season) return;
+    setExporting(true);
+    try {
+      await exportRecapPoster(recapRef, year);
+    } catch (e) {
+      Alert.alert(
+        "No se pudo exportar",
+        e instanceof Error ? e.message : "Inténtalo de nuevo en unos segundos."
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
+
   async function handleGenerateAI() {
     if (!season) return;
+    setAiError(null);
     setGenerating(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    const result = generateSeasonSummary(season);
-    const updated = {
-      ...season,
-      title: result.title,
-      synopsis: result.synopsis,
-      conclusion: result.conclusion,
-    };
-    setSeason(updated);
-    await saveSeasonAI(year, result);
-    setGenerating(false);
+    try {
+      const result = await generateSeasonSummary(season);
+      const updated = {
+        ...season,
+        title: result.title,
+        synopsis: result.synopsis,
+        conclusion: result.conclusion,
+      };
+      setSeason(updated);
+      await saveSeasonAI(year, result);
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : "No se pudo generar con la IA.");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   if (loading) {
@@ -75,7 +101,7 @@ export default function SeasonScreen() {
           isDesktop && styles.heroDesktop,
         ]}
       >
-        <Image source={{ uri: season.coverUrl }} style={styles.heroImage} />
+        <EpisodeImage uri={season.coverUrl} style={styles.heroImage} />
         <View style={styles.heroOverlay} />
         <View style={styles.heroText}>
           <Text style={styles.kicker}>TEMPORADA</Text>
@@ -94,14 +120,29 @@ export default function SeasonScreen() {
             <Text style={styles.aiTitle}>CONCLUSIÓN DE TEMPORADA</Text>
           </View>
           <Text style={styles.aiHint}>
-            La IA analiza hasta 10 episodios y escribe el cierre cinematográfico.
+            Analiza los episodios de esta temporada y escribe un cierre
+            cinematográfico.
           </Text>
         </View>
-        <Button
-          title={generating ? "Escribiendo..." : "Generar con IA"}
-          onPress={handleGenerateAI}
-          loading={generating}
-        />
+        {aiError ? <Text style={styles.aiError}>{aiError}</Text> : null}
+        <View style={styles.aiActions}>
+          <Button
+            title={generating ? "Escribiendo..." : "Generar con IA"}
+            onPress={handleGenerateAI}
+            loading={generating}
+            disabled={season.episodes.length === 0}
+            style={styles.aiActionBtn}
+          />
+          {season.conclusion ? (
+            <Button
+              title={exporting ? "Creando imagen…" : "Descargar recap (PNG)"}
+              variant="secondary"
+              onPress={handleDownloadRecap}
+              loading={exporting}
+              style={styles.aiActionBtn}
+            />
+          ) : null}
+        </View>
         <Text style={season.conclusion ? styles.conclusion : styles.placeholder}>
           {season.conclusion ??
             "Aún no hay conclusión. Pulsa el botón para que la IA cierre esta temporada."}
@@ -113,6 +154,10 @@ export default function SeasonScreen() {
         {[...season.episodes].reverse().map((episode) => (
           <EpisodeCard key={episode.id} episode={episode} compact />
         ))}
+      </View>
+
+      <View style={styles.offscreen} pointerEvents="none">
+        <SeasonRecapPoster ref={recapRef} season={season} />
       </View>
     </ScreenContainer>
   );
@@ -209,6 +254,23 @@ const styles = StyleSheet.create({
     color: colors.muted,
     fontSize: 13,
     lineHeight: 18,
+  },
+  aiActions: {
+    gap: spacing.sm,
+  },
+  aiActionBtn: {
+    width: "100%",
+  },
+  aiError: {
+    color: "#f87171",
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  offscreen: {
+    position: "absolute",
+    left: -9999,
+    top: 0,
+    opacity: 0.01,
   },
   conclusion: {
     color: colors.foreground,

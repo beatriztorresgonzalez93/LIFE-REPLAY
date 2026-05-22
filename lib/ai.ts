@@ -1,51 +1,112 @@
-import type { Episode, Season } from "./types";
+import { generateSeasonSummaryMock } from "./ai-mock";
 import { getEmotion } from "./emotions";
+import { groqChatCompletion, isGroqConfigured } from "./groq";
+import {
+  buildEpisodesContextBlock,
+  buildSeasonStats,
+  getSeasonEpisodesChronological,
+} from "./seasonAiContext";
+import type { Episode, Season, SeasonAIResult } from "./types";
 
-export interface SeasonAIResult {
-  title: string;
-  synopsis: string;
-  conclusion: string;
+export type { SeasonAIResult };
+
+export type GenerateSeasonSummaryOptions = {
+  /** Si true y no hay Groq, usa plantillas locales. */
+  allowMockFallback?: boolean;
+};
+
+export async function generateSeasonSummary(
+  season: Season,
+  options?: GenerateSeasonSummaryOptions
+): Promise<SeasonAIResult> {
+  const episodes = getSeasonEpisodesChronological(season);
+  if (episodes.length === 0) {
+    throw new Error("Añade al menos un episodio a esta temporada antes de generar.");
+  }
+
+  if (isGroqConfigured()) {
+    return generateSeasonSummaryWithGroq(season, episodes);
+  }
+
+  if (options?.allowMockFallback !== false) {
+    console.info("[Life Replay] Sin clave Groq → conclusión con plantillas locales");
+    return generateSeasonSummaryMock(season);
+  }
+
+  throw new Error(
+    "Configura EXPO_PUBLIC_GROQ_API_KEY en .env para usar la IA (https://console.groq.com)."
+  );
 }
 
-export function generateSeasonSummary(season: Season): SeasonAIResult {
-  const sample = season.episodes.slice(-10);
+async function generateSeasonSummaryWithGroq(
+  season: Season,
+  episodes: Episode[]
+): Promise<SeasonAIResult> {
   const emotions = season.dominantEmotions
-    .map((e) => getEmotion(e).label.toLowerCase())
+    .map((e) => getEmotion(e).label)
     .join(", ");
 
-  const themes = extractThemes(sample);
-  const title = buildSeasonTitle(season.year, emotions, themes);
-  const synopsis = buildSynopsis(sample.length, emotions, themes);
-  const conclusion = buildConclusion(sample, emotions, themes);
+  const stats = buildSeasonStats(episodes);
+  const episodesBlock = buildEpisodesContextBlock(episodes);
+
+  const raw = await groqChatCompletion(
+    [
+      {
+        role: "system",
+        content: `Eres un guionista de series íntimas en español (tono cinematográfico, cálido, sin clichés vacíos).
+Analizas un diario personal por TEMPORADAS (un año = una temporada). Cada día puede ser un episodio.
+Debes leer TODOS los episodios del listado (del primer al último día) y sintetizar el arco completo de ese año, no solo el final.
+Responde ÚNICAMENTE con un JSON válido (sin markdown):
+{"title":"string","synopsis":"string","conclusion":"string"}
+- title: nombre evocador de la temporada (máx. 60 caracteres), puede incluir el año ${season.year}.
+- synopsis: 2-3 frases en segunda persona (tú), resumen de toda la temporada.
+- conclusion: 2-3 párrafos que cierren el arco de TODA la temporada (inicio, medio y desenlace emocional).`,
+      },
+      {
+        role: "user",
+        content: `Temporada ${season.year}
+Episodios en esta temporada: ${stats.count} (del ${stats.spanLabel})
+Emociones dominantes: ${emotions || "variadas"}
+
+Listado cronológico completo:
+${episodesBlock}`,
+      },
+    ],
+    { maxTokens: 1400 }
+  );
+
+  const parsed = parseSeasonAIResult(raw);
+  console.info(
+    `[Life Replay] Conclusión Groq — ${episodes.length} episodio(s) de la temporada ${season.year}`
+  );
+  return { ...parsed, source: "groq" as const };
+}
+
+function parseSeasonAIResult(raw: string): Omit<SeasonAIResult, "source"> {
+  const cleaned = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "");
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error("La IA no devolvió JSON válido. Inténtalo de nuevo.");
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    throw new Error("Respuesta de IA incompleta.");
+  }
+
+  const obj = parsed as Record<string, unknown>;
+  const title = String(obj.title ?? "").trim();
+  const synopsis = String(obj.synopsis ?? "").trim();
+  const conclusion = String(obj.conclusion ?? "").trim();
+
+  if (!title || !synopsis || !conclusion) {
+    throw new Error("La IA omitió título, sinopsis o conclusión.");
+  }
 
   return { title, synopsis, conclusion };
-}
-
-function extractThemes(episodes: Episode[]) {
-  const keywords = ["trabajo", "familia", "amor", "miedo", "cambio", "soledad"];
-  const text = episodes.map((e) => e.thought.toLowerCase()).join(" ");
-  return keywords.filter((k) => text.includes(k));
-}
-
-function buildSeasonTitle(year: number, emotions: string, themes: string[]) {
-  if (themes.includes("cambio")) return `Temporada ${year}: caos y crecimiento`;
-  if (themes.includes("amor")) return `Temporada ${year}: latidos y distancia`;
-  if (emotions.includes("ansiedad")) return `Temporada ${year}: noches largas`;
-  return `Temporada ${year}: memorias en loop`;
-}
-
-function buildSynopsis(count: number, emotions: string, themes: string[]) {
-  const themeText =
-    themes.length > 0 ? `Entre ${themes.slice(0, 2).join(" y ")}, ` : "";
-  return `${themeText}${count} episodios tejidos con ${emotions}. Una temporada íntima que merece reverso.`;
-}
-
-function buildConclusion(episodes: Episode[], emotions: string, themes: string[]) {
-  const first = episodes[0];
-  const last = episodes[episodes.length - 1];
-  const arc = themes.includes("cambio")
-    ? "Esta temporada no fue lineal: hubo retrocesos, pausas y una voluntad silenciosa de seguir."
-    : "Los días se acumularon como escenas de una serie que solo tú estabas viendo en directo.";
-
-  return `${arc} De "${first?.title ?? "el inicio"}" a "${last?.title ?? "el cierre"}", tus pensamientos dibujaron un mapa emocional dominado por ${emotions}. No fue una temporada perfecta, pero fue tuya — y eso la hace irrepetible.`;
 }

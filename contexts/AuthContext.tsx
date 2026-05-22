@@ -7,31 +7,20 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Platform } from "react-native";
-import {
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  signOut as firebaseSignOut,
-  updateProfile,
-  type User,
-} from "firebase/auth";
-import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase";
-import { syncFirebaseUserWithDatabase, signOutSupabase } from "@/lib/auth";
+import type { Session, User } from "@supabase/supabase-js";
+import { ensureUserProfile } from "@/lib/auth";
+import { getSupabase, isSupabaseConfigured } from "@/lib/supabase";
 
 type AuthContextValue = {
   user: User | null;
+  session: Session | null;
   initializing: boolean;
-  authReady: boolean;
   signInEmail: (email: string, password: string) => Promise<void>;
   signUpEmail: (
     email: string,
     password: string,
     displayName?: string
   ) => Promise<void>;
-  signInGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -39,100 +28,94 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [initializing, setInitializing] = useState(isFirebaseConfigured());
-  const [linkingSupabase, setLinkingSupabase] = useState(false);
-
-  const syncSupabase = useCallback(async (firebaseUser: User | null) => {
-    if (!firebaseUser) {
-      await signOutSupabase();
-      return;
-    }
-    setLinkingSupabase(true);
-    try {
-      await syncFirebaseUserWithDatabase(firebaseUser);
-    } finally {
-      setLinkingSupabase(false);
-    }
-  }, []);
+  const [session, setSession] = useState<Session | null>(null);
+  const [initializing, setInitializing] = useState(isSupabaseConfigured());
 
   useEffect(() => {
-    if (!isFirebaseConfigured()) {
+    if (!isSupabaseConfigured()) {
       setInitializing(false);
       return;
     }
 
-    const auth = getFirebaseAuth();
-    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
-      setUser(nextUser);
-      try {
-        await syncSupabase(nextUser);
-      } catch (error) {
-        console.warn("[Auth] sync Supabase:", error);
-      } finally {
-        setInitializing(false);
-      }
+    const supabase = getSupabase();
+    if (!supabase) {
+      setInitializing(false);
+      return;
+    }
+
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+      setInitializing(false);
     });
 
-    return unsubscribe;
-  }, [syncSupabase]);
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      setInitializing(false);
+    });
+
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   const signInEmail = useCallback(async (email: string, password: string) => {
-    const auth = getFirebaseAuth();
-    const cred = await signInWithEmailAndPassword(auth, email.trim(), password);
-    await syncFirebaseUserWithDatabase(cred.user);
+    const supabase = getSupabase();
+    if (!supabase) throw new Error("Supabase no configurado");
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
+    });
+    if (error) throw new Error(error.message);
+    if (data.user) {
+      await ensureUserProfile(
+        data.user.id,
+        data.user.user_metadata?.display_name ?? data.user.email
+      );
+    }
   }, []);
 
   const signUpEmail = useCallback(
     async (email: string, password: string, displayName?: string) => {
-      const auth = getFirebaseAuth();
-      const cred = await createUserWithEmailAndPassword(
-        auth,
-        email.trim(),
-        password
-      );
-      if (displayName?.trim()) {
-        await updateProfile(cred.user, { displayName: displayName.trim() });
+      const supabase = getSupabase();
+      if (!supabase) throw new Error("Supabase no configurado");
+
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            display_name: displayName?.trim() || "Usuario Life Replay",
+          },
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (data.user) {
+        await ensureUserProfile(
+          data.user.id,
+          displayName?.trim() || data.user.email || "Usuario Life Replay"
+        );
       }
-      await syncFirebaseUserWithDatabase(cred.user);
     },
     []
   );
 
-  const signInGoogle = useCallback(async () => {
-    if (Platform.OS !== "web") {
-      throw new Error("Google solo está disponible en la versión web por ahora.");
-    }
-    const auth = getFirebaseAuth();
-    const provider = new GoogleAuthProvider();
-    const cred = await signInWithPopup(auth, provider);
-    await syncFirebaseUserWithDatabase(cred.user);
-  }, []);
-
   const signOut = useCallback(async () => {
-    await signOutSupabase();
-    const auth = getFirebaseAuth();
-    await firebaseSignOut(auth);
+    const supabase = getSupabase();
+    if (!supabase) return;
+    await supabase.auth.signOut();
   }, []);
 
   const value = useMemo(
     () => ({
       user,
-      initializing: initializing || linkingSupabase,
-      authReady: !isFirebaseConfigured() || (!initializing && !linkingSupabase),
+      session,
+      initializing,
       signInEmail,
       signUpEmail,
-      signInGoogle,
       signOut,
     }),
-    [
-      user,
-      initializing,
-      linkingSupabase,
-      signInEmail,
-      signUpEmail,
-      signInGoogle,
-      signOut,
-    ]
+    [user, session, initializing, signInEmail, signUpEmail, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

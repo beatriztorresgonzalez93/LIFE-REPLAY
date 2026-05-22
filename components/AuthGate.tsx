@@ -2,27 +2,27 @@ import { useEffect } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { useRouter, useSegments } from "expo-router";
 import { useAuth } from "@/contexts/AuthContext";
-import { isFirebaseConfigured } from "@/lib/firebase";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { colors } from "@/lib/theme";
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
-  const { user, authReady } = useAuth();
+  const { user, initializing } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isFirebaseConfigured() || !authReady) return;
+    if (!isSupabaseConfigured() || initializing) return;
 
-    const inAuthGroup = segments[0] === "(auth)";
+    const inAuth = segments[0] === "(auth)";
 
-    if (!user && !inAuthGroup) {
+    if (!user && !inAuth) {
       router.replace("/(auth)/login");
-    } else if (user && inAuthGroup) {
+    } else if (user && inAuth) {
       router.replace("/");
     }
-  }, [user, authReady, segments, router]);
+  }, [user, initializing, segments, router]);
 
-  if (isFirebaseConfigured() && !authReady) {
+  if (isSupabaseConfigured() && initializing) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator color={colors.accent} size="large" />

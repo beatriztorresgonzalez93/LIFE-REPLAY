@@ -1,8 +1,8 @@
 import {
   ensureSupabaseSession,
-  ensureUserProfile,
   getCurrentUserId,
 } from "./auth";
+import { resolveEpisodePhotoUrl } from "./episodePhoto";
 import { getSupabase } from "./supabase";
 import type { Episode, Emotion, NewEpisodeInput } from "./types";
 
@@ -42,7 +42,7 @@ function mapRow(row: DbEpisodeRow): Episode {
     songArtist: row.song_artist,
     songUrl: row.song_url ?? undefined,
     emotion: row.emotion,
-    photoUrl: row.photo_url,
+    photoUrl: resolveEpisodePhotoUrl(row.photo_url),
     seasonYear: season.year,
     episodeNumber: row.episode_number,
   };
@@ -106,6 +106,7 @@ export async function insertEpisodeToDatabase(
   if (!supabase) return draft;
 
   await ensureSupabaseSession();
+
   const userId = await getCurrentUserId();
   if (!userId) throw new Error("No hay usuario de sesión");
 

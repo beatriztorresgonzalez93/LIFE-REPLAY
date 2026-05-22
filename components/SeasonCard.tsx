@@ -1,4 +1,5 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { EpisodeImage } from "@/components/EpisodeImage";
 import { Link } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { getEmotion } from "@/lib/emotions";
@@ -19,7 +20,7 @@ export function SeasonCard({ season }: { season: Season }) {
             seasonCoverMaxHeight ? { maxHeight: seasonCoverMaxHeight } : null,
           ]}
         >
-          <Image source={{ uri: season.coverUrl }} style={styles.cover} />
+          <EpisodeImage uri={season.coverUrl} style={styles.cover} />
           <View style={styles.overlay} />
           <View style={styles.coverText}>
             <Text style={styles.kicker}>TEMPORADA</Text>

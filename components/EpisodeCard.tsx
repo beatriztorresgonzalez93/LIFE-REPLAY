@@ -1,4 +1,5 @@
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { EpisodeImage } from "@/components/EpisodeImage";
 import { Link } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { formatEpisodeDate } from "@/lib/data";
@@ -20,8 +21,8 @@ export function EpisodeCard({
   return (
     <Link href={`/episode/${episode.id}`} asChild>
       <Pressable style={styles.card}>
-        <Image
-          source={{ uri: episode.photoUrl }}
+        <EpisodeImage
+          uri={episode.photoUrl}
           style={[styles.thumb, { width: thumb.width, height: thumb.height }]}
         />
         <View style={styles.body}>
@@ -71,9 +72,7 @@ const styles = StyleSheet.create({
   },
   date: {
     color: colors.muted,
-    fontSize: 10,
-    textTransform: "uppercase",
-    letterSpacing: 1,
+    fontSize: 12,
   },
   title: {
     color: colors.foreground,

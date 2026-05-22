@@ -30,6 +30,6 @@ export function useResponsive() {
     seasonCoverMaxHeight: isDesktop ? 260 : undefined,
     photoPreviewMaxHeight: isDesktop ? 280 : undefined,
     thumb: isDesktop ? { width: 84, height: 96 } : { width: 72, height: 88 },
-    emotionColumns: isDesktop ? 4 : 2,
+    emotionColumns: isDesktop ? 4 : 3,
   };
 }

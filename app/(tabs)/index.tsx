@@ -8,7 +8,7 @@ import { SeasonCard } from "@/components/SeasonCard";
 import { Button } from "@/components/ui/Button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEpisodes } from "@/hooks/useEpisodes";
-import { isFirebaseConfigured } from "@/lib/firebase";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { useResponsive } from "@/lib/responsive";
 import { colors, radius, spacing } from "@/lib/theme";
 
@@ -34,10 +34,10 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safe} edges={["bottom"]}>
       <ScreenContainer scroll contentStyle={styles.content}>
         <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
-          {isFirebaseConfigured() && user ? (
+          {isSupabaseConfigured() && user ? (
             <View style={styles.sessionRow}>
               <Text style={styles.sessionEmail} numberOfLines={1}>
-                {user.email ?? user.displayName ?? "Sesión activa"}
+                {user.email ?? "Sesión activa"}
               </Text>
               <Pressable onPress={() => signOut()}>
                 <Text style={styles.signOut}>Cerrar sesión</Text>
@@ -49,8 +49,8 @@ export default function HomeScreen() {
             Tu vida, episodio a episodio
           </Text>
           <Text style={styles.subtitle}>
-            Cada día: una foto, un pensamiento, una canción y una emoción. Tu
-            historia como una serie.
+            Los episodios de demo y los tuyos conviven: pulsa «Grabar episodio de
+            hoy» para añadir los tuyos a cualquier temporada.
           </Text>
           <View style={[styles.heroActions, isDesktop && styles.heroActionsDesktop]}>
             <Button
