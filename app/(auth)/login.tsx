@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -23,6 +24,7 @@ export default function LoginScreen() {
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +41,10 @@ export default function LoginScreen() {
     }
     if (password.length < 6) {
       setError("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    if (mode === "register" && password !== confirmPassword) {
+      setError("Las contraseñas no coinciden.");
       return;
     }
 
@@ -69,30 +75,36 @@ export default function LoginScreen() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.container}>
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+          automaticallyAdjustKeyboardInsets
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={styles.kicker}>LIFE REPLAY</Text>
-          <Text style={styles.title}>
-            {mode === "login" ? "Inicia sesión" : "Crea tu cuenta"}
-          </Text>
-          <Text style={styles.subtitle}>
-            Cuenta con email y contraseña (Supabase Auth). Tus episodios y fotos
-            quedan en tu usuario.
-          </Text>
 
           <View style={styles.tabs}>
             <Pressable
               style={[styles.tab, mode === "login" && styles.tabActive]}
-              onPress={() => setMode("login")}
+              onPress={() => {
+                setMode("login");
+                setConfirmPassword("");
+                setError(null);
+              }}
             >
               <Text style={[styles.tabText, mode === "login" && styles.tabTextActive]}>
-                Entrar
+                Iniciar sesión
               </Text>
             </Pressable>
             <Pressable
               style={[styles.tab, mode === "register" && styles.tabActive]}
-              onPress={() => setMode("register")}
+              onPress={() => {
+                setMode("register");
+                setError(null);
+              }}
             >
               <Text
                 style={[styles.tabText, mode === "register" && styles.tabTextActive]}
@@ -129,6 +141,16 @@ export default function LoginScreen() {
             secureTextEntry
             autoComplete={mode === "login" ? "password" : "new-password"}
           />
+          {mode === "register" ? (
+            <Field
+              label="Repite contraseña"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              placeholder="Vuelve a escribir la contraseña"
+              secureTextEntry
+              autoComplete="new-password"
+            />
+          ) : null}
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -137,13 +159,7 @@ export default function LoginScreen() {
             onPress={handleSubmit}
             loading={loading}
           />
-
-          <Text style={styles.hint}>
-            En Supabase: Authentication → Providers → Email activado. Si el
-            registro pide confirmar email, revisa tu bandeja o desactiva
-            “Confirm email” en Supabase para pruebas.
-          </Text>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -159,22 +175,21 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   container: {
-    flex: 1,
+    flexGrow: 1,
     maxWidth: 420,
     width: "100%",
     alignSelf: "center",
     padding: spacing.lg,
+    paddingBottom: spacing.xl * 3,
     gap: spacing.md,
     justifyContent: "center",
   },
   kicker: {
     color: colors.accent,
-    fontSize: 11,
-    letterSpacing: 3,
+    fontSize: 22,
+    letterSpacing: 4,
     fontWeight: "700",
   },
-  title: { color: colors.foreground, fontSize: 28, fontWeight: "700" },
-  subtitle: { color: colors.muted, fontSize: 14, lineHeight: 20, marginBottom: spacing.sm },
   tabs: { flexDirection: "row", gap: spacing.sm },
   tab: {
     flex: 1,
@@ -188,5 +203,4 @@ const styles = StyleSheet.create({
   tabText: { color: colors.muted, fontWeight: "600" },
   tabTextActive: { color: colors.foreground },
   error: { color: "#f87171", fontSize: 13 },
-  hint: { color: colors.muted, fontSize: 11, lineHeight: 16, marginTop: spacing.sm },
 });

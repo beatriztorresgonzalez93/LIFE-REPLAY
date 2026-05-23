@@ -1,10 +1,19 @@
-import { ScrollView, StyleSheet, View, type ScrollViewProps, type ViewStyle } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  View,
+  type ScrollViewProps,
+  type ViewStyle,
+} from "react-native";
 import { useResponsive } from "@/lib/responsive";
 import { colors, spacing } from "@/lib/theme";
 
 interface ScreenContainerProps {
   children: React.ReactNode;
   scroll?: boolean;
+  keyboardAware?: boolean;
   contentStyle?: ViewStyle;
   style?: ViewStyle;
   scrollProps?: Omit<ScrollViewProps, "contentContainerStyle" | "style" | "children">;
@@ -13,6 +22,7 @@ interface ScreenContainerProps {
 export function ScreenContainer({
   children,
   scroll = false,
+  keyboardAware = false,
   contentStyle,
   style,
   scrollProps,
@@ -28,18 +38,31 @@ export function ScreenContainer({
   };
 
   if (scroll) {
-    return (
-      <View style={[styles.outer, style]}>
-        <ScrollView
-          style={styles.scroll}
-          contentContainerStyle={[innerStyle, styles.scrollContent]}
-          showsVerticalScrollIndicator={false}
-          {...scrollProps}
-        >
-          {children}
-        </ScrollView>
-      </View>
+    const scrollView = (
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[innerStyle, styles.scrollContent]}
+        showsVerticalScrollIndicator={false}
+        automaticallyAdjustKeyboardInsets={keyboardAware}
+        keyboardShouldPersistTaps={keyboardAware ? "handled" : undefined}
+        {...scrollProps}
+      >
+        {children}
+      </ScrollView>
     );
+
+    if (keyboardAware) {
+      return (
+        <KeyboardAvoidingView
+          style={[styles.outer, style]}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          {scrollView}
+        </KeyboardAvoidingView>
+      );
+    }
+
+    return <View style={[styles.outer, style]}>{scrollView}</View>;
   }
 
   return (

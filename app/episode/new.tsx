@@ -1,13 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ScreenContainer } from "@/components/ScreenContainer";
@@ -111,15 +103,7 @@ export default function NewEpisodeScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["bottom"]}>
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
-        <ScreenContainer
-          scroll
-          contentStyle={styles.content}
-          scrollProps={{ keyboardShouldPersistTaps: "handled" }}
-        >
+      <ScreenContainer scroll keyboardAware contentStyle={styles.content}>
           <Text style={styles.kicker}>NUEVO CAPÍTULO</Text>
           <Text style={styles.title}>Nuevo episodio</Text>
           <Text style={styles.subtitle}>
@@ -211,8 +195,7 @@ export default function NewEpisodeScreen() {
             onPress={handleSave}
             loading={saving}
           />
-        </ScreenContainer>
-      </KeyboardAvoidingView>
+      </ScreenContainer>
     </SafeAreaView>
   );
 }
@@ -221,9 +204,6 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  flex: {
-    flex: 1,
   },
   content: {
     gap: spacing.md,

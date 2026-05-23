@@ -31,6 +31,7 @@ export default function RootLayout() {
               headerTitleStyle: { fontWeight: "600" },
               contentStyle: { backgroundColor: colors.background },
               headerShadowVisible: false,
+              headerBackTitleVisible: false,
             }}
           >
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
