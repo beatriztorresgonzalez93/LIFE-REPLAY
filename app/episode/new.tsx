@@ -1,11 +1,13 @@
 import { useMemo, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ScreenContainer } from "@/components/ScreenContainer";
 import { Button } from "@/components/ui/Button";
 import { EmotionPicker } from "@/components/ui/EmotionPicker";
 import { Field } from "@/components/ui/Field";
+import { Kicker } from "@/components/ui/Kicker";
+import { OptionChip } from "@/components/ui/OptionChip";
 import { PhotoPicker } from "@/components/ui/PhotoPicker";
 import { useEpisodes } from "@/hooks/useEpisodes";
 import { ensureSupabaseSession } from "@/lib/auth";
@@ -104,97 +106,89 @@ export default function NewEpisodeScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["bottom"]}>
       <ScreenContainer scroll keyboardAware contentStyle={styles.content}>
-          <Text style={styles.kicker}>NUEVO CAPÍTULO</Text>
-          <Text style={styles.title}>Nuevo episodio</Text>
-          <Text style={styles.subtitle}>
-            Se suma a los episodios de demo que ya tienes. Foto opcional (si falla
-            la subida, se usa una imagen por defecto).
-          </Text>
+        <Kicker variant="section">NUEVO CAPÍTULO</Kicker>
+        <Text style={styles.title}>Nuevo episodio</Text>
+        <Text style={styles.subtitle}>
+          Se suma a los episodios de demo que ya tienes. Foto opcional (si falla
+          la subida, se usa una imagen por defecto).
+        </Text>
 
-          <View style={styles.block}>
-            <Text style={styles.label}>Temporada</Text>
-            <View style={styles.yearRow}>
-              {seasonYears.map((year) => (
-                <Pressable
-                  key={year}
-                  style={[styles.yearChip, seasonYear === year && styles.yearChipActive]}
-                  onPress={() => setSeasonYear(year)}
-                >
-                  <Text
-                    style={[
-                      styles.yearChipText,
-                      seasonYear === year && styles.yearChipTextActive,
-                    ]}
-                  >
-                    {year}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-
-          <Field
-            label="Fecha"
-            placeholder="2026-05-21"
-            value={date}
-            onChangeText={setDate}
-            autoCapitalize="none"
-          />
-          {/^\d{4}-\d{2}-\d{2}$/.test(date.trim()) ? (
-            <Text style={styles.datePreview}>{formatEpisodeDate(date.trim())}</Text>
-          ) : null}
-
-          <View style={styles.block}>
-            <Text style={styles.label}>Foto del día</Text>
-            <PhotoPicker value={photoUri} onChange={setPhotoUri} />
-          </View>
-
-          <Field
-            label="Pensamiento del día"
-            placeholder="¿Qué pasó hoy? Voz en off de tu episodio..."
-            value={thought}
-            onChangeText={setThought}
-            multiline
-            style={styles.textarea}
-          />
-
-          <View style={styles.row}>
-            <View style={styles.rowItem}>
-              <Field
-                label="Canción"
-                placeholder="Título"
-                value={songTitle}
-                onChangeText={setSongTitle}
+        <View style={styles.block}>
+          <Text style={styles.label}>Temporada</Text>
+          <View style={styles.yearRow}>
+            {seasonYears.map((year) => (
+              <OptionChip
+                key={year}
+                label={String(year)}
+                selected={seasonYear === year}
+                onPress={() => setSeasonYear(year)}
               />
-            </View>
-            <View style={styles.rowItem}>
-              <Field
-                label="Artista"
-                placeholder="Artista"
-                value={songArtist}
-                onChangeText={setSongArtist}
-              />
-            </View>
+            ))}
           </View>
+        </View>
 
-          <Field
-            label="Enlace (opcional)"
-            placeholder="Spotify, YouTube..."
-            value={songUrl}
-            onChangeText={setSongUrl}
-            autoCapitalize="none"
-          />
+        <Field
+          label="Fecha"
+          placeholder="2026-05-21"
+          value={date}
+          onChangeText={setDate}
+          autoCapitalize="none"
+        />
+        {/^\d{4}-\d{2}-\d{2}$/.test(date.trim()) ? (
+          <Text style={styles.datePreview}>{formatEpisodeDate(date.trim())}</Text>
+        ) : null}
 
-          <View style={styles.block}>
-            <Text style={styles.label}>Emoción principal</Text>
-            <EmotionPicker value={emotion} onChange={setEmotion} />
+        <View style={styles.block}>
+          <Text style={styles.label}>Foto del día</Text>
+          <PhotoPicker value={photoUri} onChange={setPhotoUri} />
+        </View>
+
+        <Field
+          label="Pensamiento del día"
+          placeholder="¿Qué pasó hoy? Voz en off de tu episodio..."
+          value={thought}
+          onChangeText={setThought}
+          multiline
+          style={styles.textarea}
+        />
+
+        <View style={styles.row}>
+          <View style={styles.rowItem}>
+            <Field
+              label="Canción"
+              placeholder="Título"
+              value={songTitle}
+              onChangeText={setSongTitle}
+            />
           </View>
+          <View style={styles.rowItem}>
+            <Field
+              label="Artista"
+              placeholder="Artista"
+              value={songArtist}
+              onChangeText={setSongArtist}
+            />
+          </View>
+        </View>
 
-          <Button
-            title={`Guardar en temporada ${seasonYear}`}
-            onPress={handleSave}
-            loading={saving}
-          />
+        <Field
+          label="Enlace (opcional)"
+          placeholder="Spotify, YouTube..."
+          value={songUrl}
+          onChangeText={setSongUrl}
+          autoCapitalize="none"
+        />
+
+        <View style={styles.block}>
+          <Text style={styles.label}>Emoción principal</Text>
+          <EmotionPicker value={emotion} onChange={setEmotion} />
+        </View>
+
+        <Button
+          title={`Guardar en temporada ${seasonYear}`}
+          onPress={handleSave}
+          loading={saving}
+        />
       </ScreenContainer>
     </SafeAreaView>
   );
@@ -208,12 +202,6 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.md,
     maxWidth: 720,
-  },
-  kicker: {
-    color: colors.accent,
-    fontSize: 11,
-    letterSpacing: 3,
-    fontWeight: "700",
   },
   title: {
     color: colors.foreground,
@@ -256,24 +244,5 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: spacing.sm,
-  },
-  yearChip: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  yearChipActive: {
-    borderColor: colors.accent,
-    backgroundColor: colors.surface,
-  },
-  yearChipText: {
-    color: colors.muted,
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  yearChipTextActive: {
-    color: colors.foreground,
   },
 });

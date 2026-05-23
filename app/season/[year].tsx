@@ -1,43 +1,50 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { EpisodeCard } from "@/components/EpisodeCard";
 import { EpisodeImage } from "@/components/EpisodeImage";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { ScreenLoading } from "@/components/ScreenLoading";
 import { SeasonRecapPoster } from "@/components/SeasonRecapPoster";
 import { Button } from "@/components/ui/Button";
+import { ErrorText } from "@/components/ui/ErrorText";
+import { Kicker } from "@/components/ui/Kicker";
+import { SectionTitle } from "@/components/ui/SectionTitle";
+import { useEpisodes } from "@/hooks/useEpisodes";
 import { exportRecapPoster } from "@/lib/exportRecapImage";
 import { generateSeasonSummary } from "@/lib/ai";
-import { loadEpisodes, saveSeasonAI } from "@/lib/data";
+import { saveSeasonAI } from "@/lib/data";
 import { useResponsive } from "@/lib/responsive";
-import { getSeasonByYear, groupEpisodesIntoSeasons } from "@/lib/seasons";
+import { getSeasonByYear } from "@/lib/seasons";
 import type { Season } from "@/lib/types";
 import { colors, radius, spacing } from "@/lib/theme";
+
+type SeasonOverrides = Partial<Pick<Season, "title" | "synopsis" | "conclusion">>;
 
 export default function SeasonScreen() {
   const { year: yearParam } = useLocalSearchParams<{ year: string }>();
   const year = Number(yearParam);
   const { heroHeight, isDesktop } = useResponsive();
-  const [season, setSeason] = useState<Season | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { seasons, ready } = useEpisodes();
+  const [overrides, setOverrides] = useState<SeasonOverrides>({});
   const [generating, setGenerating] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const recapRef = useRef<View>(null);
 
+  const baseSeason = useMemo(
+    () => getSeasonByYear(seasons, year) ?? null,
+    [seasons, year]
+  );
+
+  const season = useMemo(() => {
+    if (!baseSeason) return null;
+    return { ...baseSeason, ...overrides };
+  }, [baseSeason, overrides]);
+
   useEffect(() => {
-    loadEpisodes().then((eps) => {
-      const seasons = groupEpisodesIntoSeasons(eps);
-      setSeason(getSeasonByYear(seasons, year) ?? null);
-      setLoading(false);
-    });
+    setOverrides({});
   }, [year]);
 
   async function handleDownloadRecap() {
@@ -61,13 +68,11 @@ export default function SeasonScreen() {
     setGenerating(true);
     try {
       const result = await generateSeasonSummary(season);
-      const updated = {
-        ...season,
+      setOverrides({
         title: result.title,
         synopsis: result.synopsis,
         conclusion: result.conclusion,
-      };
-      setSeason(updated);
+      });
       await saveSeasonAI(year, result);
     } catch (e) {
       setAiError(e instanceof Error ? e.message : "No se pudo generar con la IA.");
@@ -76,17 +81,13 @@ export default function SeasonScreen() {
     }
   }
 
-  if (loading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
+  if (!ready) {
+    return <ScreenLoading />;
   }
 
   if (!season) {
     return (
-      <View style={styles.center}>
+      <View style={styles.empty}>
         <Text style={styles.muted}>Temporada no encontrada.</Text>
       </View>
     );
@@ -104,7 +105,7 @@ export default function SeasonScreen() {
         <EpisodeImage uri={season.coverUrl} style={styles.heroImage} />
         <View style={styles.heroOverlay} />
         <View style={styles.heroText}>
-          <Text style={styles.kicker}>TEMPORADA</Text>
+          <Kicker variant="section">TEMPORADA</Kicker>
           <Text style={styles.title}>{season.title}</Text>
           <Text style={styles.synopsis}>{season.synopsis}</Text>
           <Text style={styles.meta}>
@@ -124,7 +125,7 @@ export default function SeasonScreen() {
             cinematográfico.
           </Text>
         </View>
-        {aiError ? <Text style={styles.aiError}>{aiError}</Text> : null}
+        {aiError ? <ErrorText>{aiError}</ErrorText> : null}
         <View style={styles.aiActions}>
           <Button
             title={generating ? "Escribiendo..." : "Generar con IA"}
@@ -149,7 +150,7 @@ export default function SeasonScreen() {
         </Text>
       </View>
 
-      <Text style={styles.sectionTitle}>EPISODIOS</Text>
+      <SectionTitle>EPISODIOS</SectionTitle>
       <View style={styles.list}>
         {[...season.episodes].reverse().map((episode) => (
           <EpisodeCard key={episode.id} episode={episode} compact />
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.md,
   },
-  center: {
+  empty: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
@@ -198,12 +199,6 @@ const styles = StyleSheet.create({
     left: spacing.md,
     right: spacing.md,
     bottom: spacing.lg,
-  },
-  kicker: {
-    color: colors.accent,
-    fontSize: 11,
-    letterSpacing: 3,
-    fontWeight: "700",
   },
   title: {
     color: "#fff",
@@ -261,11 +256,6 @@ const styles = StyleSheet.create({
   aiActionBtn: {
     width: "100%",
   },
-  aiError: {
-    color: "#f87171",
-    fontSize: 13,
-    lineHeight: 18,
-  },
   offscreen: {
     position: "absolute",
     left: -9999,
@@ -282,12 +272,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontStyle: "italic",
     lineHeight: 22,
-  },
-  sectionTitle: {
-    color: colors.foreground,
-    fontSize: 18,
-    fontWeight: "700",
-    letterSpacing: 1,
   },
   list: {
     gap: spacing.sm,

@@ -29,19 +29,18 @@ export function ScreenContainer({
 }: ScreenContainerProps) {
   const { pagePadding, maxContentWidth } = useResponsive();
 
-  const innerStyle: ViewStyle = {
+  const baseContentStyle: ViewStyle = {
     width: "100%",
     maxWidth: maxContentWidth,
     paddingHorizontal: pagePadding,
     alignSelf: "center",
-    ...contentStyle,
   };
 
   if (scroll) {
     const scrollView = (
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[innerStyle, styles.scrollContent]}
+        contentContainerStyle={[baseContentStyle, styles.scrollContent, contentStyle]}
         showsVerticalScrollIndicator={false}
         automaticallyAdjustKeyboardInsets={keyboardAware}
         keyboardShouldPersistTaps={keyboardAware ? "handled" : undefined}
@@ -67,7 +66,7 @@ export function ScreenContainer({
 
   return (
     <View style={[styles.outer, style]}>
-      <View style={innerStyle}>{children}</View>
+      <View style={[baseContentStyle, contentStyle]}>{children}</View>
     </View>
   );
 }

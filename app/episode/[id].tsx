@@ -1,17 +1,12 @@
-import { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Linking,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useMemo, useState } from "react";
+import { Alert, Linking, StyleSheet, Text, View } from "react-native";
 import { Link, router, useLocalSearchParams } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { EpisodeImage } from "@/components/EpisodeImage";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { ScreenLoading } from "@/components/ScreenLoading";
 import { Button } from "@/components/ui/Button";
+import { Kicker } from "@/components/ui/Kicker";
 import { useEpisodes } from "@/hooks/useEpisodes";
 import { confirmDestructive } from "@/lib/confirm";
 import { formatEpisodeDate, getEpisodeById } from "@/lib/data";
@@ -19,7 +14,6 @@ import { ensureSupabaseSession } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { getEmotion } from "@/lib/emotions";
 import { useResponsive } from "@/lib/responsive";
-import type { Episode } from "@/lib/types";
 import { colors, radius, spacing } from "@/lib/theme";
 
 function normalizeId(id: string | string[] | undefined) {
@@ -32,12 +26,11 @@ export default function EpisodeDetailScreen() {
   const id = normalizeId(params.id);
   const { heroHeight, isDesktop } = useResponsive();
   const { episodes, ready, removeEpisode } = useEpisodes();
-  const [episode, setEpisode] = useState<Episode | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    if (!ready || !id) return;
-    setEpisode(getEpisodeById(episodes, id) ?? null);
+  const episode = useMemo(() => {
+    if (!ready || !id) return null;
+    return getEpisodeById(episodes, id) ?? null;
   }, [id, episodes, ready]);
 
   async function confirmDelete() {
@@ -78,16 +71,12 @@ export default function EpisodeDetailScreen() {
   }
 
   if (!ready) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
+    return <ScreenLoading />;
   }
 
   if (!episode) {
     return (
-      <View style={styles.center}>
+      <View style={styles.empty}>
         <Text style={styles.muted}>Episodio no encontrado.</Text>
         <Link href="/" style={styles.link}>
           Volver al inicio
@@ -126,7 +115,7 @@ export default function EpisodeDetailScreen() {
           </Text>
         </View>
 
-        <Text style={styles.sectionLabel}>PENSAMIENTO</Text>
+        <Kicker variant="label">PENSAMIENTO</Kicker>
         <Text style={styles.thought}>&ldquo;{episode.thought}&rdquo;</Text>
 
         {episode.songUrl ? (
@@ -157,7 +146,7 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.md,
   },
-  center: {
+  empty: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
@@ -217,12 +206,6 @@ const styles = StyleSheet.create({
   badge: {
     color: colors.muted,
     fontSize: 14,
-  },
-  sectionLabel: {
-    color: colors.muted,
-    fontSize: 11,
-    letterSpacing: 2,
-    fontWeight: "700",
   },
   thought: {
     color: colors.foreground,

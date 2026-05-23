@@ -8,6 +8,7 @@ export const colors = {
   surfaceHover: "#18181f",
   border: "#27272f",
   borderHover: "#3f3f4a",
+  danger: "#f87171",
 };
 
 export const spacing = {

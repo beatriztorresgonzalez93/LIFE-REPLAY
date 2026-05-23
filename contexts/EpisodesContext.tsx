@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { loadEpisodes, saveEpisodes, deleteEpisode } from "@/lib/data";
+import { loadEpisodes, deleteEpisode } from "@/lib/data";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { groupEpisodesIntoSeasons } from "@/lib/seasons";
 import type { Episode } from "@/lib/types";
@@ -18,9 +18,7 @@ type EpisodesContextValue = {
   episodes: Episode[];
   seasons: ReturnType<typeof groupEpisodesIntoSeasons>;
   ready: boolean;
-  refresh: () => Promise<Episode[]>;
   setEpisodes: (episodes: Episode[]) => void;
-  persist: (next: Episode[]) => Promise<void>;
   removeEpisode: (episodeId: string) => Promise<{ episodes: Episode[]; deletedFromCloud: boolean }>;
 };
 
@@ -49,11 +47,6 @@ export function EpisodesProvider({ children }: { children: ReactNode }) {
     refresh();
   }, [refresh, user?.id, authLoading]);
 
-  const persist = useCallback(async (next: Episode[]) => {
-    setEpisodes(next);
-    await saveEpisodes(next);
-  }, []);
-
   const removeEpisode = useCallback(async (episodeId: string) => {
     const result = await deleteEpisode(episodeId, episodesRef.current);
     setEpisodes(result.episodes);
@@ -70,12 +63,10 @@ export function EpisodesProvider({ children }: { children: ReactNode }) {
       episodes,
       seasons,
       ready,
-      refresh,
       setEpisodes,
-      persist,
       removeEpisode,
     }),
-    [episodes, seasons, ready, refresh, persist, removeEpisode]
+    [episodes, seasons, ready, removeEpisode]
   );
 
   return (

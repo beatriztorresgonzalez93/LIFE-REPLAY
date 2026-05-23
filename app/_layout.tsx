@@ -5,12 +5,12 @@ import { Platform } from "react-native";
 import { AuthGate } from "@/components/AuthGate";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { EpisodesProvider } from "@/contexts/EpisodesContext";
+import { stackScreenOptions } from "@/lib/navigation";
 import { getSupabaseConfigDebug, isSupabaseConfigured } from "@/lib/supabase";
-import { colors } from "@/lib/theme";
 
 export default function RootLayout() {
   useEffect(() => {
-    if (Platform.OS === "web") {
+    if (__DEV__ && Platform.OS === "web") {
       const debug = getSupabaseConfigDebug();
       console.info("[Life Replay] Supabase en web:", {
         configurado: isSupabaseConfigured(),
@@ -24,16 +24,7 @@ export default function RootLayout() {
       <AuthGate>
         <EpisodesProvider>
           <StatusBar style="light" />
-          <Stack
-            screenOptions={{
-              headerStyle: { backgroundColor: colors.background },
-              headerTintColor: colors.foreground,
-              headerTitleStyle: { fontWeight: "600" },
-              contentStyle: { backgroundColor: colors.background },
-              headerShadowVisible: false,
-              headerBackTitleVisible: false,
-            }}
-          >
+          <Stack screenOptions={stackScreenOptions}>
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             <Stack.Screen

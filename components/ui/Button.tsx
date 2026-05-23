@@ -4,7 +4,6 @@ import {
   StyleSheet,
   Text,
   TextStyle,
-  View,
   ViewStyle,
 } from "react-native";
 import { colors, radius, spacing } from "@/lib/theme";

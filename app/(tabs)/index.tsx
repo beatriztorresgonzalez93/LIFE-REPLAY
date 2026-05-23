@@ -1,29 +1,24 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { EpisodeCard } from "@/components/EpisodeCard";
 import { ScreenContainer } from "@/components/ScreenContainer";
+import { ScreenLoading } from "@/components/ScreenLoading";
 import { SeasonCard } from "@/components/SeasonCard";
 import { Button } from "@/components/ui/Button";
-import { useAuth } from "@/contexts/AuthContext";
+import { Kicker } from "@/components/ui/Kicker";
+import { SectionTitle } from "@/components/ui/SectionTitle";
 import { useEpisodes } from "@/hooks/useEpisodes";
-import { isSupabaseConfigured } from "@/lib/supabase";
 import { useResponsive } from "@/lib/responsive";
 import { colors, radius, spacing } from "@/lib/theme";
 
 export default function HomeScreen() {
   const { episodes, seasons, ready } = useEpisodes();
-  const { user, signOut } = useAuth();
   const { isDesktop, isWide } = useResponsive();
 
   if (!ready) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator color={colors.accent} size="large" />
-        <Text style={styles.loadingText}>Cargando tu archivo...</Text>
-      </View>
-    );
+    return <ScreenLoading message="Cargando tu archivo..." />;
   }
 
   const recent = [...episodes].sort(
@@ -34,17 +29,7 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.safe} edges={["bottom"]}>
       <ScreenContainer scroll contentStyle={styles.content}>
         <View style={[styles.hero, isDesktop && styles.heroDesktop]}>
-          {isSupabaseConfigured() && user ? (
-            <View style={styles.sessionRow}>
-              <Text style={styles.sessionEmail} numberOfLines={1}>
-                {user.email ?? "Sesión activa"}
-              </Text>
-              <Pressable onPress={() => signOut()}>
-                <Text style={styles.signOut}>Cerrar sesión</Text>
-              </Pressable>
-            </View>
-          ) : null}
-          <Text style={styles.kicker}>LIFE REPLAY</Text>
+          <Kicker variant="section">LIFE REPLAY</Kicker>
           <Text style={[styles.title, isDesktop && styles.titleDesktop]}>
             Tu vida, episodio a episodio
           </Text>
@@ -70,7 +55,7 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>TUS TEMPORADAS</Text>
+          <SectionTitle>TUS TEMPORADAS</SectionTitle>
           <FontAwesome name="magic" size={16} color={colors.accent} />
         </View>
         <View style={styles.seasonGrid}>
@@ -88,7 +73,7 @@ export default function HomeScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>EPISODIOS RECIENTES</Text>
+        <SectionTitle>EPISODIOS RECIENTES</SectionTitle>
         <View style={styles.episodeList}>
           {recent.slice(0, 5).map((episode) => (
             <EpisodeCard key={episode.id} episode={episode} />
@@ -107,16 +92,6 @@ const styles = StyleSheet.create({
   content: {
     gap: spacing.lg,
   },
-  loading: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.background,
-    gap: spacing.md,
-  },
-  loadingText: {
-    color: colors.muted,
-  },
   hero: {
     borderRadius: radius.xl,
     borderWidth: 1,
@@ -127,29 +102,6 @@ const styles = StyleSheet.create({
   },
   heroDesktop: {
     padding: spacing.xl,
-  },
-  sessionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  sessionEmail: {
-    color: colors.muted,
-    fontSize: 12,
-    flex: 1,
-  },
-  signOut: {
-    color: colors.accent,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  kicker: {
-    color: colors.accent,
-    fontSize: 11,
-    letterSpacing: 3,
-    fontWeight: "700",
   },
   title: {
     color: colors.foreground,
@@ -186,12 +138,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  sectionTitle: {
-    color: colors.foreground,
-    fontSize: 18,
-    fontWeight: "700",
-    letterSpacing: 1,
   },
   seasonGrid: {
     flexDirection: "row",

@@ -50,10 +50,6 @@ export function isValidSupabaseUrl(url: string) {
 
 let client: SupabaseClient | null = null;
 
-export function resetSupabaseClient() {
-  client = null;
-}
-
 export function getSupabase(): SupabaseClient | null {
   const { url, anonKey } = readConfig();
 

@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { EpisodeImage } from "@/components/EpisodeImage";
+import { Kicker } from "@/components/ui/Kicker";
 import { Link } from "expo-router";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { getEmotion } from "@/lib/emotions";
@@ -23,7 +24,7 @@ export function SeasonCard({ season }: { season: Season }) {
           <EpisodeImage uri={season.coverUrl} style={styles.cover} />
           <View style={styles.overlay} />
           <View style={styles.coverText}>
-            <Text style={styles.kicker}>TEMPORADA</Text>
+            <Kicker variant="overlay">TEMPORADA</Kicker>
             <Text style={styles.year}>{season.year}</Text>
             <Text style={styles.synopsis} numberOfLines={2}>
               {season.synopsis}
@@ -81,11 +82,6 @@ const styles = StyleSheet.create({
     left: spacing.md,
     right: spacing.md,
     bottom: spacing.md,
-  },
-  kicker: {
-    color: "rgba(255,255,255,0.7)",
-    fontSize: 10,
-    letterSpacing: 2,
   },
   year: {
     color: "#fff",
