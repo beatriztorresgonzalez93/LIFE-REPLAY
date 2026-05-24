@@ -161,4 +161,11 @@ export function getEpisodeById(episodes: Episode[], id: string) {
   return episodes.find((e) => e.id === id);
 }
 
-export { formatEpisodeDate, todayIsoDate } from "./dates";
+export {
+  formatEpisodeDate,
+  formatIsoToDisplayDate,
+  isValidDisplayDate,
+  parseDisplayDateToIso,
+  todayDisplayDate,
+  todayIsoDate,
+} from "./dates";

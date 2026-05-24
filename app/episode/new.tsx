@@ -11,7 +11,13 @@ import { OptionChip } from "@/components/ui/OptionChip";
 import { PhotoPicker } from "@/components/ui/PhotoPicker";
 import { useEpisodes } from "@/hooks/useEpisodes";
 import { ensureSupabaseSession } from "@/lib/auth";
-import { formatEpisodeDate, saveNewEpisode, todayIsoDate } from "@/lib/data";
+import {
+  formatEpisodeDate,
+  isValidDisplayDate,
+  parseDisplayDateToIso,
+  saveNewEpisode,
+  todayDisplayDate,
+} from "@/lib/data";
 import { uploadEpisodePhoto } from "@/lib/uploadPhoto";
 import { DEFAULT_EPISODE_PHOTO } from "@/lib/episodePhoto";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -29,7 +35,7 @@ export default function NewEpisodeScreen() {
   const [saving, setSaving] = useState(false);
   const currentYear = new Date().getFullYear();
   const [seasonYear, setSeasonYear] = useState(currentYear);
-  const [date, setDate] = useState(todayIsoDate());
+  const [date, setDate] = useState(todayDisplayDate());
 
   const seasonYears = useMemo(() => {
     const years = new Set(episodes.map((e) => e.seasonYear));
@@ -40,6 +46,12 @@ export default function NewEpisodeScreen() {
   async function handleSave() {
     if (!thought.trim() || !songTitle.trim() || !songArtist.trim()) {
       Alert.alert("Faltan datos", "Completa pensamiento, canción y artista.");
+      return;
+    }
+
+    const isoDate = parseDisplayDateToIso(date);
+    if (date.trim() && !isoDate) {
+      Alert.alert("Fecha inválida", "Usa el formato día-mes-año, por ejemplo 21-05-2026.");
       return;
     }
 
@@ -71,7 +83,7 @@ export default function NewEpisodeScreen() {
           emotion,
           photoUrl,
           seasonYear,
-          date: date.trim() || undefined,
+          date: isoDate ?? undefined,
         },
         episodes
       );
@@ -129,13 +141,16 @@ export default function NewEpisodeScreen() {
 
         <Field
           label="Fecha"
-          placeholder="2026-05-21"
+          placeholder="21-05-2026"
           value={date}
           onChangeText={setDate}
           autoCapitalize="none"
+          keyboardType="numbers-and-punctuation"
         />
-        {/^\d{4}-\d{2}-\d{2}$/.test(date.trim()) ? (
-          <Text style={styles.datePreview}>{formatEpisodeDate(date.trim())}</Text>
+        {isValidDisplayDate(date.trim()) ? (
+          <Text style={styles.datePreview}>
+            {formatEpisodeDate(parseDisplayDateToIso(date.trim())!)}
+          </Text>
         ) : null}
 
         <View style={styles.block}>
