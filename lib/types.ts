@@ -55,7 +55,7 @@ export interface NewEpisodeInput {
   songUrl?: string;
   emotion: Emotion;
   photoUrl: string;
-  /** Temporada (año). Por defecto, año actual. */
+  /** @deprecated La temporada se deduce del año de la fecha. */
   seasonYear?: number;
   /** Fecha ISO (YYYY-MM-DD). Por defecto, hoy. */
   date?: string;

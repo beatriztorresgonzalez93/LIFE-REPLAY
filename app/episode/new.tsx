@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Alert, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/Button";
 import { EmotionPicker } from "@/components/ui/EmotionPicker";
 import { Field } from "@/components/ui/Field";
 import { Kicker } from "@/components/ui/Kicker";
-import { OptionChip } from "@/components/ui/OptionChip";
 import { PhotoPicker } from "@/components/ui/PhotoPicker";
 import { useEpisodes } from "@/hooks/useEpisodes";
 import { ensureSupabaseSession } from "@/lib/auth";
@@ -33,15 +32,7 @@ export default function NewEpisodeScreen() {
   const [emotion, setEmotion] = useState<Emotion>("hope");
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const currentYear = new Date().getFullYear();
-  const [seasonYear, setSeasonYear] = useState(currentYear);
   const [date, setDate] = useState(todayDisplayDate());
-
-  const seasonYears = useMemo(() => {
-    const years = new Set(episodes.map((e) => e.seasonYear));
-    years.add(currentYear);
-    return [...years].sort((a, b) => b - a);
-  }, [episodes, currentYear]);
 
   async function handleSave() {
     if (!thought.trim() || !songTitle.trim() || !songArtist.trim()) {
@@ -82,7 +73,6 @@ export default function NewEpisodeScreen() {
           songUrl: songUrl.trim() || undefined,
           emotion,
           photoUrl,
-          seasonYear,
           date: isoDate ?? undefined,
         },
         episodes
@@ -120,24 +110,6 @@ export default function NewEpisodeScreen() {
       <ScreenContainer scroll keyboardAware contentStyle={styles.content}>
         <Kicker variant="section">NUEVO CAPÍTULO</Kicker>
         <Text style={styles.title}>Nuevo episodio</Text>
-        <Text style={styles.subtitle}>
-          Se suma a los episodios de demo que ya tienes. Foto opcional (si falla
-          la subida, se usa una imagen por defecto).
-        </Text>
-
-        <View style={styles.block}>
-          <Text style={styles.label}>Temporada</Text>
-          <View style={styles.yearRow}>
-            {seasonYears.map((year) => (
-              <OptionChip
-                key={year}
-                label={String(year)}
-                selected={seasonYear === year}
-                onPress={() => setSeasonYear(year)}
-              />
-            ))}
-          </View>
-        </View>
 
         <Field
           label="Fecha"
@@ -199,11 +171,7 @@ export default function NewEpisodeScreen() {
           <EmotionPicker value={emotion} onChange={setEmotion} />
         </View>
 
-        <Button
-          title={`Guardar en temporada ${seasonYear}`}
-          onPress={handleSave}
-          loading={saving}
-        />
+        <Button title="Guardar episodio" onPress={handleSave} loading={saving} />
       </ScreenContainer>
     </SafeAreaView>
   );
@@ -222,11 +190,6 @@ const styles = StyleSheet.create({
     color: colors.foreground,
     fontSize: 26,
     fontWeight: "700",
-  },
-  subtitle: {
-    color: colors.muted,
-    fontSize: 14,
-    marginBottom: spacing.sm,
   },
   datePreview: {
     color: colors.accent,
@@ -254,10 +217,5 @@ const styles = StyleSheet.create({
   rowItem: {
     flex: 1,
     minWidth: 200,
-  },
-  yearRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
   },
 });

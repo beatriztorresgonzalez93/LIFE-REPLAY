@@ -8,7 +8,7 @@ import {
   isDatabaseEpisodeId,
 } from "./supabaseEpisodes";
 import { isSupabaseConfigured } from "./supabase";
-import { todayIsoDate } from "./dates";
+import { parseLocalDate, todayIsoDate } from "./dates";
 import { autoSeedDemoIfEmpty, SEED_EPISODES } from "./seedEpisodes";
 import { getItem, setItem } from "./storage";
 
@@ -128,14 +128,16 @@ export async function deleteEpisode(
 }
 
 export function createEpisode(input: NewEpisodeInput, existing: Episode[]): Episode {
-  const year = input.seasonYear ?? new Date().getFullYear();
-  const yearEpisodes = existing.filter((e) => e.seasonYear === year);
-  const episodeNumber = yearEpisodes.length + 1;
-  const id = `ep-${Date.now()}`;
   const date =
     input.date?.trim() && /^\d{4}-\d{2}-\d{2}$/.test(input.date.trim())
       ? input.date.trim()
       : todayIsoDate();
+
+  const parsed = parseLocalDate(date);
+  const year = parsed?.getFullYear() ?? new Date().getFullYear();
+  const yearEpisodes = existing.filter((e) => e.seasonYear === year);
+  const episodeNumber = yearEpisodes.length + 1;
+  const id = `ep-${Date.now()}`;
 
   return {
     id,
