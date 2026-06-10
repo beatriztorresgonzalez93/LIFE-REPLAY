@@ -39,6 +39,9 @@ create table if not exists episodes (
     )
   ),
   photo_url text not null,
+  latitude numeric,
+  longitude numeric,
+  location_name text,
   created_at timestamptz default now(),
   unique (season_id, episode_number)
 );

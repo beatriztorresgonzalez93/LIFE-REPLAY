@@ -26,6 +26,9 @@ export interface Episode {
   photoUrl: string;
   seasonYear: number;
   episodeNumber: number;
+  latitude?: number;
+  longitude?: number;
+  locationName?: string;
 }
 
 export interface Season {
@@ -59,4 +62,7 @@ export interface NewEpisodeInput {
   seasonYear?: number;
   /** Fecha ISO (YYYY-MM-DD). Por defecto, hoy. */
   date?: string;
+  latitude?: number;
+  longitude?: number;
+  locationName?: string;
 }

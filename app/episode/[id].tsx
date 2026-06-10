@@ -13,6 +13,7 @@ import { formatEpisodeDate, getEpisodeById } from "@/lib/data";
 import { ensureSupabaseSession } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { getEmotion } from "@/lib/emotions";
+import { formatEpisodeLocation } from "@/lib/location";
 import { useResponsive } from "@/lib/responsive";
 import { colors, radius, spacing } from "@/lib/theme";
 
@@ -86,6 +87,7 @@ export default function EpisodeDetailScreen() {
   }
 
   const emotion = getEmotion(episode.emotion);
+  const locationLabel = formatEpisodeLocation(episode);
 
   return (
     <ScreenContainer scroll contentStyle={styles.content}>
@@ -114,6 +116,13 @@ export default function EpisodeDetailScreen() {
             {episode.songTitle} — {episode.songArtist}
           </Text>
         </View>
+
+        {locationLabel ? (
+          <View style={styles.locationRow}>
+            <FontAwesome name="map-marker" size={14} color={colors.accent} />
+            <Text style={styles.locationText}>{locationLabel}</Text>
+          </View>
+        ) : null}
 
         <Kicker variant="label">PENSAMIENTO</Kicker>
         <Text style={styles.thought}>&ldquo;{episode.thought}&rdquo;</Text>
@@ -206,6 +215,16 @@ const styles = StyleSheet.create({
   badge: {
     color: colors.muted,
     fontSize: 14,
+  },
+  locationRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  locationText: {
+    color: colors.foreground,
+    fontSize: 14,
+    flex: 1,
   },
   thought: {
     color: colors.foreground,

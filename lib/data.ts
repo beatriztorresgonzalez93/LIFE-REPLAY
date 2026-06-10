@@ -151,6 +151,9 @@ export function createEpisode(input: NewEpisodeInput, existing: Episode[]): Epis
     photoUrl: input.photoUrl,
     seasonYear: year,
     episodeNumber,
+    latitude: input.latitude,
+    longitude: input.longitude,
+    locationName: input.locationName,
   };
 }
 

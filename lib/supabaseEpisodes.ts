@@ -24,11 +24,30 @@ type DbEpisodeRow = {
   emotion: Emotion;
   photo_url: string;
   episode_number: number;
+  latitude: number | null;
+  longitude: number | null;
+  location_name: string | null;
   seasons: DbSeason | DbSeason[];
 };
 
 function normalizeSeason(seasons: DbSeason | DbSeason[]): DbSeason {
   return Array.isArray(seasons) ? seasons[0] : seasons;
+}
+
+const EPISODE_SELECT_WITH_LOCATION = `
+      id, date, title, thought, song_title, song_artist, song_url,
+      emotion, photo_url, episode_number, latitude, longitude, location_name,
+      seasons!inner (year, title, synopsis, conclusion)
+    `;
+
+const EPISODE_SELECT_BASE = `
+      id, date, title, thought, song_title, song_artist, song_url,
+      emotion, photo_url, episode_number,
+      seasons!inner (year, title, synopsis, conclusion)
+    `;
+
+function isMissingLocationColumnError(message: string) {
+  return /latitude|longitude|location_name/i.test(message);
 }
 
 function mapRow(row: DbEpisodeRow): Episode {
@@ -45,6 +64,9 @@ function mapRow(row: DbEpisodeRow): Episode {
     photoUrl: resolveEpisodePhotoUrl(row.photo_url),
     seasonYear: season.year,
     episodeNumber: row.episode_number,
+    latitude: row.latitude ?? undefined,
+    longitude: row.longitude ?? undefined,
+    locationName: row.location_name ?? undefined,
   };
 }
 
@@ -54,16 +76,19 @@ export async function fetchEpisodesFromDatabase(): Promise<Episode[]> {
 
   await ensureSupabaseSession();
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("episodes")
-    .select(
-      `
-      id, date, title, thought, song_title, song_artist, song_url,
-      emotion, photo_url, episode_number,
-      seasons!inner (year, title, synopsis, conclusion)
-    `
-    )
+    .select(EPISODE_SELECT_WITH_LOCATION)
     .order("date", { ascending: false });
+
+  if (error && isMissingLocationColumnError(error.message)) {
+    const fallback = await supabase
+      .from("episodes")
+      .select(EPISODE_SELECT_BASE)
+      .order("date", { ascending: false });
+    data = fallback.data as typeof data;
+    error = fallback.error;
+  }
 
   if (error) {
     throw new Error(error.message);
@@ -124,33 +149,56 @@ export async function insertEpisodeToDatabase(
 
   const title = `Episodio ${episodeNumber}: ${shortTitle(draft.thought)}`;
 
-  const { data, error } = await supabase
+  const basePayload = {
+    user_id: userId,
+    season_id: season.id,
+    episode_number: episodeNumber,
+    date: draft.date,
+    title,
+    thought: draft.thought,
+    song_title: draft.songTitle,
+    song_artist: draft.songArtist,
+    song_url: draft.songUrl ?? null,
+    emotion: draft.emotion,
+    photo_url: draft.photoUrl,
+  };
+
+  let { data, error } = await supabase
     .from("episodes")
     .insert({
-      user_id: userId,
-      season_id: season.id,
-      episode_number: episodeNumber,
-      date: draft.date,
-      title,
-      thought: draft.thought,
-      song_title: draft.songTitle,
-      song_artist: draft.songArtist,
-      song_url: draft.songUrl ?? null,
-      emotion: draft.emotion,
-      photo_url: draft.photoUrl,
+      ...basePayload,
+      latitude: draft.latitude ?? null,
+      longitude: draft.longitude ?? null,
+      location_name: draft.locationName ?? null,
     })
-    .select(
-      `
-      id, date, title, thought, song_title, song_artist, song_url,
-      emotion, photo_url, episode_number,
-      seasons!inner (year, title, synopsis, conclusion)
-    `
-    )
+    .select(EPISODE_SELECT_WITH_LOCATION)
     .single();
+
+  if (error && isMissingLocationColumnError(error.message)) {
+    const fallback = await supabase
+      .from("episodes")
+      .insert(basePayload)
+      .select(EPISODE_SELECT_BASE)
+      .single();
+    if (fallback.error) throw new Error(fallback.error.message);
+    const saved = mapRow(fallback.data as unknown as DbEpisodeRow);
+    return {
+      ...saved,
+      latitude: draft.latitude,
+      longitude: draft.longitude,
+      locationName: draft.locationName,
+    };
+  }
 
   if (error) throw new Error(error.message);
 
-  return mapRow(data as unknown as DbEpisodeRow);
+  const saved = mapRow(data as unknown as DbEpisodeRow);
+  return {
+    ...saved,
+    latitude: saved.latitude ?? draft.latitude,
+    longitude: saved.longitude ?? draft.longitude,
+    locationName: saved.locationName ?? draft.locationName,
+  };
 }
 
 function shortTitle(thought: string) {

@@ -26,6 +26,8 @@ const config: ExpoConfig = {
         "Life Replay necesita la cámara para tomar la foto del día.",
       NSPhotoLibraryUsageDescription:
         "Life Replay necesita acceso a tus fotos para elegir la imagen del episodio.",
+      NSLocationWhenInUseUsageDescription:
+        "Life Replay usa tu ubicación para recordar dónde pasó cada día.",
     },
   },
   android: {
@@ -37,6 +39,8 @@ const config: ExpoConfig = {
     permissions: [
       "android.permission.CAMERA",
       "android.permission.READ_MEDIA_IMAGES",
+      "android.permission.ACCESS_FINE_LOCATION",
+      "android.permission.ACCESS_COARSE_LOCATION",
     ],
   },
   web: {
@@ -53,6 +57,13 @@ const config: ExpoConfig = {
           "Life Replay necesita acceso a tus fotos para guardar episodios.",
         cameraPermission:
           "Life Replay necesita la cámara para tomar la foto del día.",
+      },
+    ],
+    [
+      "expo-location",
+      {
+        locationWhenInUsePermission:
+          "Life Replay usa tu ubicación para recordar dónde pasó cada día.",
       },
     ],
   ],

@@ -19,6 +19,7 @@ import {
 } from "@/lib/data";
 import { uploadEpisodePhoto } from "@/lib/uploadPhoto";
 import { DEFAULT_EPISODE_PHOTO } from "@/lib/episodePhoto";
+import { getLocationForEpisode } from "@/lib/location";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import type { Emotion } from "@/lib/types";
 import { colors, spacing } from "@/lib/theme";
@@ -52,6 +53,8 @@ export default function NewEpisodeScreen() {
         await ensureSupabaseSession();
       }
 
+      const episodeLocation = await getLocationForEpisode();
+
       let photoUrl = DEFAULT_EPISODE_PHOTO;
       if (photoUri) {
         try {
@@ -74,6 +77,9 @@ export default function NewEpisodeScreen() {
           emotion,
           photoUrl,
           date: isoDate ?? undefined,
+          latitude: episodeLocation?.latitude,
+          longitude: episodeLocation?.longitude,
+          locationName: episodeLocation?.name,
         },
         episodes
       );
